@@ -53,9 +53,9 @@
 #ifdef IS_RAMPS_13
   #define SERVO0_PIN        7 // RAMPS_13 // Will conflict with BTN_EN2 on LCD_I2C_VIKI
 #else
-  #define SERVO0_PIN       11
+  #define SERVO0_PIN       1
 #endif
-#define SERVO1_PIN          6
+#define SERVO1_PIN         6
 #define SERVO2_PIN          5
 #define SERVO3_PIN          4
 
@@ -96,7 +96,7 @@
 
 #if ENABLED(Z_MIN_PROBE_ENDSTOP)
   // Define a pin to use as the signal pin on Arduino for the Z_PROBE endstop.
-  #define Z_MIN_PROBE_PIN  32
+  #define Z_MIN_PROBE_PIN  18
 #endif
 
 #if ENABLED(FILAMENT_RUNOUT_SENSOR)
