@@ -623,15 +623,15 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
   //  (0,0)
   #define X_PROBE_OFFSET_FROM_EXTRUDER 26.0     // X offset: -left  [of the nozzle] +right
   #define Y_PROBE_OFFSET_FROM_EXTRUDER 7.0     // Y offset: -front [of the nozzle] +behind
-  #define Z_PROBE_OFFSET_FROM_EXTRUDER -1.6     // Z offset: -below [the nozzle] (always negative!)
+  #define Z_PROBE_OFFSET_FROM_EXTRUDER -3.1     // Z offset: -below [the nozzle] (always negative!)
 
-  #define XY_TRAVEL_SPEED 7000         // X and Y axis travel speed between probes, in mm/min.
+  #define XY_TRAVEL_SPEED 6000         // X and Y axis travel speed between probes, in mm/min.
 
-  #define Z_RAISE_BEFORE_PROBING 30   // How much the Z axis will be raised before traveling to the first probing point.
-  #define Z_RAISE_BETWEEN_PROBINGS 10 // How much the Z axis will be raised when traveling from between next probing points.
-  #define Z_RAISE_AFTER_PROBING 30    // How much the Z axis will be raised after the last probing point.
+  #define Z_RAISE_BEFORE_PROBING 20   // How much the Z axis will be raised before traveling to the first probing point.
+  #define Z_RAISE_BETWEEN_PROBINGS 7 // How much the Z axis will be raised when traveling from between next probing points.
+  #define Z_RAISE_AFTER_PROBING 20    // How much the Z axis will be raised after the last probing point.
 
-  #define Z_PROBE_END_SCRIPT "G1 Z20 X0 Y0 F7000"
+  #define Z_PROBE_END_SCRIPT "G1 Z50 X0 Y0 F3000"
 //#define Z_PROBE_END_SCRIPT "G1 Z10 F12000\nG1 X15 Y330\nG1 Z0.5\nG1 Z10" // These commands will be executed in the end of G29 routine.
                                                                             // Useful to retract a deployable Z probe.
 
@@ -682,7 +682,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 #if ENABLED(MANUAL_HOME_POSITIONS)
   #define MANUAL_X_HOME_POS 0
   #define MANUAL_Y_HOME_POS 0
-  #define MANUAL_Z_HOME_POS 356.7 // For delta: Distance between nozzle and print surface after homing.
+  #define MANUAL_Z_HOME_POS 347.6 // For delta: Distance between nozzle and print surface after homing.
 #endif
 
 // @section movement
@@ -701,21 +701,20 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 #define XYZ_STEPS ((XYZ_FULL_STEPS_PER_ROTATION) * (XYZ_MICROSTEPS) / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
 
 // Geared Extruder 5.1
-#define STEPS_PER_REVOLUTION_E 3300
+#define EXTRUDER_FULL_STEPS_PER_ROTATION 200
+#define EXTRUDER_MICROSTEPS 4
 #define EXTRUDER_GEAR_RATIO 5.18
-#define PINCH_WHEEL_DIAMETER 12.0
-#define AXIS_STEPS_PER_UNIT_E (STEPS_PER_REVOLUTION_E * EXTRUDER_GEAR_RATIO / (PINCH_WHEEL_DIAMETER * PI))
+#define EXTRUDER_PINCH_WHEEL_DIAMETER 12.0
+#define EXTRUDER_STEPS ((EXTRUDER_FULL_STEPS_PER_ROTATION * EXTRUDER_MICROSTEPS) * EXTRUDER_GEAR_RATIO / (EXTRUDER_PINCH_WHEEL_DIAMETER * PI))
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, AXIS_STEPS_PER_UNIT_E}  // default steps per unit for small tooth 1/4
-#define DEFAULT_MAX_FEEDRATE          {200, 200, 200, 20}    // (mm/sec)
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, EXTRUDER_STEPS}  // default steps per unit for small tooth 1/4
+#define DEFAULT_MAX_FEEDRATE          {95, 95, 300, 100}    // (mm/sec)
 
-//#define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 158}   // default steps per unit for PowerWasp
-//#define DEFAULT_MAX_FEEDRATE          {200, 200, 200, 200}    // (mm/sec)
 #define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          2000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_ACCELERATION          9000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+#define DEFAULT_TRAVEL_ACCELERATION   9000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                20.0    // (mm/sec)
