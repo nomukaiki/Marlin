@@ -50,14 +50,16 @@
 
 #define LARGE_FLASH true
 
+#define EXTRUDER_0_FAN_PIN  11
+
 #ifdef IS_RAMPS_13
-  #define SERVO0_PIN        7 // RAMPS_13 // Will conflict with BTN_EN2 on LCD_I2C_VIKI
+  #define SERVO0_PIN        40 // RAMPS_13 // Will conflict with BTN_EN2 on LCD_I2C_VIKI
 #else
-  #define SERVO0_PIN       1
+  #define SERVO0_PIN       40
 #endif
-#define SERVO1_PIN         6
-#define SERVO2_PIN          5
-#define SERVO3_PIN          4
+#define SERVO1_PIN         -1
+#define SERVO2_PIN         -1
+#define SERVO3_PIN         -1
 
 #define X_STEP_PIN         54
 #define X_DIR_PIN          55
@@ -135,7 +137,7 @@
 
 #define HEATER_2_PIN       -1
 
-#define TEMP_0_PIN         13   // ANALOG NUMBERING
+#define TEMP_0_PIN         14   // ANALOG NUMBERING
 #define TEMP_1_PIN         15   // ANALOG NUMBERING
 #define TEMP_2_PIN         -1   // ANALOG NUMBERING
 
@@ -145,7 +147,7 @@
   #define HEATER_BED_PIN    8    // BED
 #endif
 
-#define TEMP_BED_PIN         14   // ANALOG NUMBERING
+#define TEMP_BED_PIN         13   // ANALOG NUMBERING
 
 #if ENABLED(Z_PROBE_SLED)
   #define SLED_PIN           -1
