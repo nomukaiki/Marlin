@@ -80,13 +80,23 @@
 #endif
 
 /**
- * Thermal Protection parameters for the bed
- * are like the above for the hotends.
- * WATCH_TEMP_BED_PERIOD and WATCH_TEMP_BED_INCREASE are not imlemented now.
+ * Thermal Protection parameters for the bed are just as above for hotends.
  */
 #if ENABLED(THERMAL_PROTECTION_BED)
   #define THERMAL_PROTECTION_BED_PERIOD 20    // Seconds
-  #define THERMAL_PROTECTION_BED_HYSTERESIS 4 // Degrees Celsius
+  #define THERMAL_PROTECTION_BED_HYSTERESIS 2 // Degrees Celsius
+
+  /**
+   * Whenever an M140 or M190 increases the target temperature the firmware will wait for the
+   * WATCH_BED_TEMP_PERIOD to expire, and if the temperature hasn't increased by WATCH_BED_TEMP_INCREASE
+   * degrees, the machine is halted, requiring a hard reset. This test restarts with any M140/M190,
+   * but only if the current temperature is far enough below the target for a reliable test.
+   *
+   * If you get too many "Heating failed" errors, increase WATCH_BED_TEMP_PERIOD and/or decrease
+   * WATCH_BED_TEMP_INCREASE. (WATCH_BED_TEMP_INCREASE should not be below 2.)
+   */
+  #define WATCH_BED_TEMP_PERIOD 60                // Seconds
+  #define WATCH_BED_TEMP_INCREASE 2               // Degrees Celsius
 #endif
 
 #if ENABLED(PIDTEMP)
@@ -201,9 +211,7 @@
   //#define Z_DUAL_ENDSTOPS
 
   #if ENABLED(Z_DUAL_ENDSTOPS)
-    #define Z2_MAX_PIN 36                     //Endstop used for Z2 axis. In this case I'm using XMAX in a Rumba Board (pin 36)
-    const bool Z2_MAX_ENDSTOP_INVERTING = false;
-    #define DISABLE_XMAX_ENDSTOP              //Better to disable the XMAX to avoid conflict. Just rename "XMAX_ENDSTOP" by the endstop you are using for Z2 axis.
+    #define Z2_USE_ENDSTOP _XMAX_
   #endif
 
 #endif // Z_DUAL_STEPPER_DRIVERS
@@ -654,6 +662,38 @@ const unsigned int dropsegments = 5; //everything with less than this number of 
   #define E3_STALLCURRENT 1500 //current in mA where the driver will detect a stall
 
 #endif
+
+/**
+ * TWI/I2C BUS
+ *
+ * This feature is an EXPERIMENTAL feature so it shall not be used on production
+ * machines. Enabling this will allow you to send and receive I2C data from slave
+ * devices on the bus.
+ *
+ * ; Example #1
+ * ; This macro send the string "Marlin" to the slave device with address 0x63
+ * ; It uses multiple M155 commands with one B<base 10> arg
+ * M155 A63  ; Target slave address
+ * M155 B77  ; M
+ * M155 B97  ; a
+ * M155 B114 ; r
+ * M155 B108 ; l
+ * M155 B105 ; i
+ * M155 B110 ; n
+ * M155 S1   ; Send the current buffer
+ *
+ * ; Example #2
+ * ; Request 6 bytes from slave device with address 0x63
+ * M156 A63 B5
+ *
+ * ; Example #3
+ * ; Example serial output of a M156 request
+ * echo:i2c-reply: from:63 bytes:5 data:hello
+ */
+
+// @section i2cbus
+
+//#define EXPERIMENTAL_I2CBUS
 
 #include "Conditionals.h"
 #include "SanityCheck.h"

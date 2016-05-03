@@ -209,55 +209,37 @@
   #endif
 #endif
 
-#if ENABLED(DISABLE_MAX_ENDSTOPS)
-  #undef X_MAX_PIN
-  #undef Y_MAX_PIN
-  #undef Z_MAX_PIN
-  #define X_MAX_PIN          -1
-  #define Y_MAX_PIN          -1
-  #define Z_MAX_PIN          -1
-#endif
-
-#if ENABLED(DISABLE_MIN_ENDSTOPS)
-  #undef X_MIN_PIN
-  #undef Y_MIN_PIN
-  #undef Z_MIN_PIN
-  #define X_MIN_PIN          -1
-  #define Y_MIN_PIN          -1
-  #define Z_MIN_PIN          -1
-#endif
-
 #if ENABLED(DISABLE_Z_MIN_PROBE_ENDSTOP) || DISABLED(Z_MIN_PROBE_ENDSTOP) // Allow code to compile regardless of Z_MIN_PROBE_ENDSTOP setting.
   #undef Z_MIN_PROBE_PIN
   #define Z_MIN_PROBE_PIN    -1
 #endif
 
-#if ENABLED(DISABLE_XMAX_ENDSTOP)
+#if DISABLED(USE_XMAX_PLUG)
   #undef X_MAX_PIN
   #define X_MAX_PIN          -1
 #endif
 
-#if ENABLED(DISABLE_XMIN_ENDSTOP)
-  #undef X_MIN_PIN
-  #define X_MIN_PIN          -1
-#endif
-
-#if ENABLED(DISABLE_YMAX_ENDSTOP)
+#if DISABLED(USE_YMAX_PLUG)
   #undef Y_MAX_PIN
   #define Y_MAX_PIN          -1
 #endif
 
-#if ENABLED(DISABLE_YMIN_ENDSTOP)
-  #undef Y_MIN_PIN
-  #define Y_MIN_PIN          -1
-#endif
-
-#if ENABLED(DISABLE_ZMAX_ENDSTOP)
+#if DISABLED(USE_ZMAX_PLUG)
   #undef Z_MAX_PIN
   #define Z_MAX_PIN          -1
 #endif
 
-#if ENABLED(DISABLE_ZMIN_ENDSTOP)
+#if DISABLED(USE_XMIN_PLUG)
+  #undef X_MIN_PIN
+  #define X_MIN_PIN          -1
+#endif
+
+#if DISABLED(USE_YMIN_PLUG)
+  #undef Y_MIN_PIN
+  #define Y_MIN_PIN          -1
+#endif
+
+#if DISABLED(USE_ZMIN_PLUG)
   #undef Z_MIN_PIN
   #define Z_MIN_PIN          -1
 #endif
@@ -288,7 +270,8 @@
     X_STEP_PIN, X_DIR_PIN, X_ENABLE_PIN, X_MIN_PIN, X_MAX_PIN, \
     Y_STEP_PIN, Y_DIR_PIN, Y_ENABLE_PIN, Y_MIN_PIN, Y_MAX_PIN, \
     Z_STEP_PIN, Z_DIR_PIN, Z_ENABLE_PIN, Z_MIN_PIN, Z_MAX_PIN, Z_MIN_PROBE_PIN, \
-    PS_ON_PIN, HEATER_BED_PIN, FAN_PIN, \
+    PS_ON_PIN, HEATER_BED_PIN, FAN_PIN, CONTROLLERFAN_PIN, \
+    EXTRUDER_0_AUTO_FAN_PIN, EXTRUDER_1_AUTO_FAN_PIN, EXTRUDER_2_AUTO_FAN_PIN, EXTRUDER_3_AUTO_FAN_PIN, \
     _E0_PINS _E1_PINS _E2_PINS _E3_PINS \
     analogInputToDigitalPin(TEMP_BED_PIN) \
   }
