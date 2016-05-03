@@ -264,10 +264,10 @@
   #define K1 0.95 //smoothing factor within the PID
 
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
-  // oXis Kossel k800 XL
-  #define DEFAULT_Kp 22.04
-  #define DEFAULT_Ki 1.65
-  #define DEFAULT_Kd 73.67
+  // Joao Kossel k800 XL
+  #define  DEFAULT_Kp 30.77
+  #define  DEFAULT_Ki 2.57
+  #define  DEFAULT_Kd 92.27
 
   // Kossel k800 XL
   //#define DEFAULT_Kp 22.25
@@ -298,7 +298,7 @@
 // If your configuration is significantly different than this and you don't understand the issues involved, you probably
 // shouldn't use bed PID until someone else verifies your hardware works.
 // If this is enabled, find your own PID constants below.
-//#define PIDTEMPBED
+#define PIDTEMPBED
 
 //#define BED_LIMIT_SWITCHING
 
@@ -327,9 +327,10 @@
   //#define  DEFAULT_bedKd 1675.16
 
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
-    #define  DEFAULT_bedKp 74.78
-    #define  DEFAULT_bedKi 9.31
-    #define  DEFAULT_bedKd 150.08
+  // Joao Kossel k800 XL - Silicone heater
+  #define  DEFAULT_bedKp 59.62
+  #define  DEFAULT_bedKi 7.58
+  #define  DEFAULT_bedKd 117.23
 
 #endif // PIDTEMPBED
 
@@ -555,8 +556,8 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // @section bedlevel
 
 #define AUTO_BED_LEVELING_FEATURE // Delete the comment to enable (remove // at the start of the line)
-#define DEBUG_LEVELING_FEATURE
-#define Z_MIN_PROBE_REPEATABILITY_TEST  // If not commented out, Z Probe Repeatability test will be included if Auto Bed Leveling is Enabled.
+// #define DEBUG_LEVELING_FEATURE
+// #define Z_MIN_PROBE_REPEATABILITY_TEST  // If not commented out, Z Probe Repeatability test will be included if Auto Bed Leveling is Enabled.
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE)
 
@@ -621,9 +622,9 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
   //    |           |
   //    O-- FRONT --+
   //  (0,0)
-  #define X_PROBE_OFFSET_FROM_EXTRUDER 26.0     // X offset: -left  [of the nozzle] +right
-  #define Y_PROBE_OFFSET_FROM_EXTRUDER 7.0     // Y offset: -front [of the nozzle] +behind
-  #define Z_PROBE_OFFSET_FROM_EXTRUDER -3.1     // Z offset: -below [the nozzle] (always negative!)
+  #define X_PROBE_OFFSET_FROM_EXTRUDER -13.0     // X offset: -left  [of the nozzle] +right
+  #define Y_PROBE_OFFSET_FROM_EXTRUDER -3.5     // Y offset: -front [of the nozzle] +behind
+  #define Z_PROBE_OFFSET_FROM_EXTRUDER -1.2     // Z offset: -below [the nozzle] (always negative!)
 
   #define XY_TRAVEL_SPEED 6000         // X and Y axis travel speed between probes, in mm/min.
 
@@ -682,7 +683,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 #if ENABLED(MANUAL_HOME_POSITIONS)
   #define MANUAL_X_HOME_POS 0
   #define MANUAL_Y_HOME_POS 0
-  #define MANUAL_Z_HOME_POS 347.6 // For delta: Distance between nozzle and print surface after homing.
+  #define MANUAL_Z_HOME_POS 347.9 // For delta: Distance between nozzle and print surface after homing.
 #endif
 
 // @section movement
@@ -702,13 +703,13 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 
 // Geared Extruder 5.1
 #define EXTRUDER_FULL_STEPS_PER_ROTATION 200
-#define EXTRUDER_MICROSTEPS 4
+#define EXTRUDER_MICROSTEPS 32
 #define EXTRUDER_GEAR_RATIO 5.18
-#define EXTRUDER_PINCH_WHEEL_DIAMETER 12.0
+#define EXTRUDER_PINCH_WHEEL_DIAMETER 11.5
 #define EXTRUDER_STEPS ((EXTRUDER_FULL_STEPS_PER_ROTATION * EXTRUDER_MICROSTEPS) * EXTRUDER_GEAR_RATIO / (EXTRUDER_PINCH_WHEEL_DIAMETER * PI))
 
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, EXTRUDER_STEPS}  // default steps per unit for small tooth 1/4
-#define DEFAULT_MAX_FEEDRATE          {95, 95, 300, 100}    // (mm/sec)
+#define DEFAULT_MAX_FEEDRATE          {95, 95, 300, 15}    // (mm/sec)
 
 #define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
@@ -794,7 +795,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 
 //#define ULTRA_LCD  //general LCD support, also 16x2
 //#define DOGLCD  // Support for SPI LCD 128x64 (Controller ST7565R graphic Display Family)
-//#define SDSUPPORT // Enable SD Card Support in Hardware Console
+#define SDSUPPORT // Enable SD Card Support in Hardware Console
                     // Changed behaviour! If you need SDSUPPORT uncomment it!
 //#define SPI_SPEED SPI_HALF_SPEED // (also SPI_QUARTER_SPEED, SPI_EIGHTH_SPEED) Use slower SD transfer mode (not normally needed - uncomment if you're getting volume init error)
 //#define SD_CHECK_AND_RETRY // Use CRC checks and retries on the SD communication
