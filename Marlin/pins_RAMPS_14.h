@@ -112,7 +112,7 @@
     #define CONTROLLERFAN_PIN  -1 // Pin used for the fan to cool controller
   #endif
 #elif MB(RAMPS_14_EEF) || MB(RAMPS_14_SF) || MB(RAMPS_13_EEF) || MB(RAMPS_13_SF)
-  #define FAN_PIN           8
+  #define FAN_PIN           11
 #else
   #define FAN_PIN           4 // IO pin. Buffer needed
 #endif
