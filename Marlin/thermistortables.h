@@ -25,7 +25,7 @@
 
 #include "Marlin.h"
 #include "macros.h"
-#include "thermistor_joao.h"
+#include "thermistortables_custom.h"
 
 #define OVERSAMPLENR 16
 

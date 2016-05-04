@@ -1,7 +1,7 @@
 
 /*
-   69 - thermistor 100k large diode
-   -69 - thermistor 100k small diode
+   691 - thermistor 100k large diode
+   692 - thermistor 100k small diode
 
 */
 #if (THERMISTORHEATER_0 == 691) || (THERMISTORHEATER_1 == 691)  || (THERMISTORHEATER_2 == 691) || (THERMISTORBED == 691) //100k thermistor
