@@ -70,7 +70,7 @@
   // Make delta curves from many straight lines (linear interpolation).
   // This is a trade-off between visible corners (not enough segments)
   // and processor overload (too many expensive sqrt calls).
-  #define DELTA_SEGMENTS_PER_SECOND 160
+  #define DELTA_SEGMENTS_PER_SECOND 80
 
   // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
 
@@ -641,7 +641,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
   //  (0,0)
   #define X_PROBE_OFFSET_FROM_EXTRUDER -13  // X offset: -left  +right  [of the nozzle]
   #define Y_PROBE_OFFSET_FROM_EXTRUDER -4  // Y offset: -front +behind [the nozzle]
-  #define Z_PROBE_OFFSET_FROM_EXTRUDER -1.4   // Z offset: -below +above  [the nozzle]         Increase value if after leveling the nozzle is too high from bed
+  #define Z_PROBE_OFFSET_FROM_EXTRUDER -1.2   // Z offset: -below +above  [the nozzle]         Increase value if after leveling the nozzle is too high from bed
 
   #define XY_TRAVEL_SPEED 6000         // X and Y axis travel speed between probes, in mm/min.
 
