@@ -35,6 +35,17 @@
 
 #include "Conditionals.h"
 
+// @section delta_optimization
+
+//===========================================================================
+//=========================== DELTA OPTIMIZATION  ===========================
+//===========================================================================
+
+// There is suttering when the LCD is updated. A workaround is to slow down the 
+// number of screen updates per second. By default the LCD refreshes 10 times per second.
+// This value should be between 1 and 10
+#define LCD_REFRESH_TIMES_PER_SECOND 5
+
 // @section temperature
 
 //===========================================================================

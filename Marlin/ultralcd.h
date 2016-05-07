@@ -59,7 +59,11 @@
   #define LCD_MESSAGEPGM(x) lcd_setstatuspgm(PSTR(x))
   #define LCD_ALERTMESSAGEPGM(x) lcd_setalertstatuspgm(PSTR(x))
 
-  #define LCD_UPDATE_INTERVAL 100
+  #ifndef LCD_REFRESH_TIMES_PER_SECOND
+    #define LCD_REFRESH_TIMES_PER_SECOND 10
+  #endif
+
+  #define LCD_UPDATE_INTERVAL 1000 / LCD_REFRESH_TIMES_PER_SECOND
   #define LCD_TIMEOUT_TO_STATUS 15000
 
   #if ENABLED(ULTIPANEL)
