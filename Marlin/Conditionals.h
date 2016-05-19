@@ -388,17 +388,10 @@
   #endif
 
   /**
-   * Enable MECHANICAL_PROBE for Z_PROBE_ALLEN_KEY, for older configs
+   * Host keep alive
    */
-  #if ENABLED(Z_PROBE_ALLEN_KEY)
-    #define MECHANICAL_PROBE
-  #endif
-
-  /**
-   * Avoid double-negatives for enabling features
-   */
-  #if DISABLED(DISABLE_HOST_KEEPALIVE)
-    #define HOST_KEEPALIVE_FEATURE
+  #ifndef DEFAULT_KEEPALIVE_INTERVAL
+    #define DEFAULT_KEEPALIVE_INTERVAL 2
   #endif
 
   /**
@@ -478,7 +471,7 @@
   #endif
 
   #if TEMP_SENSOR_1 <= -2
-    #error MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_1
+    #error "MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_1"
   #elif TEMP_SENSOR_1 == -1
     #define HEATER_1_USES_AD595
   #elif TEMP_SENSOR_1 == 0
@@ -490,7 +483,7 @@
   #endif
 
   #if TEMP_SENSOR_2 <= -2
-    #error MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_2
+    #error "MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_2"
   #elif TEMP_SENSOR_2 == -1
     #define HEATER_2_USES_AD595
   #elif TEMP_SENSOR_2 == 0
@@ -502,7 +495,7 @@
   #endif
 
   #if TEMP_SENSOR_3 <= -2
-    #error MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_3
+    #error "MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_3"
   #elif TEMP_SENSOR_3 == -1
     #define HEATER_3_USES_AD595
   #elif TEMP_SENSOR_3 == 0
@@ -514,7 +507,7 @@
   #endif
 
   #if TEMP_SENSOR_BED <= -2
-    #error MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_BED
+    #error "MAX6675 / MAX31855 Thermocouples not supported for TEMP_SENSOR_BED"
   #elif TEMP_SENSOR_BED == -1
     #define BED_USES_AD595
   #elif TEMP_SENSOR_BED == 0
@@ -628,7 +621,7 @@
   #define HAS_Z_MAX (PIN_EXISTS(Z_MAX))
   #define HAS_Z2_MIN (PIN_EXISTS(Z2_MIN))
   #define HAS_Z2_MAX (PIN_EXISTS(Z2_MAX))
-  #define HAS_Z_PROBE (PIN_EXISTS(Z_MIN_PROBE))
+  #define HAS_Z_MIN_PROBE_PIN (PIN_EXISTS(Z_MIN_PROBE))
   #define HAS_SOLENOID_1 (PIN_EXISTS(SOL1))
   #define HAS_SOLENOID_2 (PIN_EXISTS(SOL2))
   #define HAS_SOLENOID_3 (PIN_EXISTS(SOL3))
@@ -742,16 +735,11 @@
     #endif
   #endif
 
-  #if  ( (HAS_Z_MIN && ENABLED(Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN)) || HAS_Z_PROBE ) \
-    && ( \
-         ENABLED(FIX_MOUNTED_PROBE) \
-      || ENABLED(MECHANICAL_PROBE) \
-      || HAS_Z_ENDSTOP_SERVO \
-      || ENABLED(Z_PROBE_ALLEN_KEY) \
-      || ENABLED(Z_PROBE_SLED) \
-    )
-    #define HAS_Z_MIN_PROBE
-  #endif
+  #define PROBE_SELECTED (ENABLED(FIX_MOUNTED_PROBE) || ENABLED(MECHANICAL_PROBE) || ENABLED(Z_PROBE_ALLEN_KEY) || HAS_Z_ENDSTOP_SERVO || ENABLED(Z_PROBE_SLED))
+
+  #define PROBE_PIN_CONFIGURED (HAS_Z_MIN_PROBE_PIN || (HAS_Z_MIN && ENABLED(Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN)))
+
+  #define HAS_BED_PROBE (PROBE_SELECTED && PROBE_PIN_CONFIGURED)
 
   /**
    * Delta radius/rod trimmers

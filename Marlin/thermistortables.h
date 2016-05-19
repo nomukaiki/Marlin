@@ -1178,7 +1178,7 @@ const short temptable_1047[][2] PROGMEM = {
   #define HEATER_0_TEMPTABLE_LEN COUNT(HEATER_0_TEMPTABLE)
 #else
   #ifdef HEATER_0_USES_THERMISTOR
-    #error No heater 0 thermistor table specified
+    #error "No heater 0 thermistor table specified"
   #else  // HEATER_0_USES_THERMISTOR
     #define HEATER_0_TEMPTABLE NULL
     #define HEATER_0_TEMPTABLE_LEN 0
@@ -1201,7 +1201,7 @@ const short temptable_1047[][2] PROGMEM = {
   #define HEATER_1_TEMPTABLE_LEN COUNT(HEATER_1_TEMPTABLE)
 #else
   #ifdef HEATER_1_USES_THERMISTOR
-    #error No heater 1 thermistor table specified
+    #error "No heater 1 thermistor table specified"
   #else  // HEATER_1_USES_THERMISTOR
     #define HEATER_1_TEMPTABLE NULL
     #define HEATER_1_TEMPTABLE_LEN 0
@@ -1224,7 +1224,7 @@ const short temptable_1047[][2] PROGMEM = {
   #define HEATER_2_TEMPTABLE_LEN COUNT(HEATER_2_TEMPTABLE)
 #else
   #ifdef HEATER_2_USES_THERMISTOR
-    #error No heater 2 thermistor table specified
+    #error "No heater 2 thermistor table specified"
   #else  // HEATER_2_USES_THERMISTOR
     #define HEATER_2_TEMPTABLE NULL
     #define HEATER_2_TEMPTABLE_LEN 0
@@ -1247,7 +1247,7 @@ const short temptable_1047[][2] PROGMEM = {
   #define HEATER_3_TEMPTABLE_LEN COUNT(HEATER_3_TEMPTABLE)
 #else
   #ifdef HEATER_3_USES_THERMISTOR
-    #error No heater 3 thermistor table specified
+    #error "No heater 3 thermistor table specified"
   #else  // HEATER_3_USES_THERMISTOR
     #define HEATER_3_TEMPTABLE NULL
     #define HEATER_3_TEMPTABLE_LEN 0
@@ -1270,7 +1270,7 @@ const short temptable_1047[][2] PROGMEM = {
   #define BEDTEMPTABLE_LEN COUNT(BEDTEMPTABLE)
 #else
   #ifdef BED_USES_THERMISTOR
-    #error No bed thermistor table specified
+    #error "No bed thermistor table specified"
   #endif // BED_USES_THERMISTOR
 #endif
 

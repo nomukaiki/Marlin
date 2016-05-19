@@ -1014,7 +1014,7 @@ void lcd_cooldown() {
     lcd_goto_menu(_lcd_level_bed_moving);
 
     // _mbl_goto_xy runs the menu loop until the move is done
-    int ix, iy;
+    int8_t ix, iy;
     mbl.zigzag(_lcd_level_bed_position, ix, iy);
     _mbl_goto_xy(mbl.get_x(ix), mbl.get_y(iy));
 
@@ -1093,6 +1093,11 @@ static void lcd_prepare_menu() {
   // Auto Home
   //
   MENU_ITEM(gcode, MSG_AUTO_HOME, PSTR("G28"));
+  #if ENABLED(INDIVIDUAL_AXIS_HOMING_MENU)
+    MENU_ITEM(gcode, MSG_AUTO_HOME_X, PSTR("G28 X"));
+    MENU_ITEM(gcode, MSG_AUTO_HOME_Y, PSTR("G28 Y"));
+    MENU_ITEM(gcode, MSG_AUTO_HOME_Z, PSTR("G28 Z"));
+  #endif
 
   //
   // Set Home Offsets
@@ -2466,9 +2471,15 @@ void lcd_reset_alert_level() { lcd_status_message_level = 0; }
       GET_BUTTON_STATES(buttons);
     #endif //!NEWPANEL
 
-    #if ENABLED(REVERSE_MENU_DIRECTION)
+    #if ENABLED(REVERSE_MENU_DIRECTION) && ENABLED(REVERSE_ENCODER_DIRECTION)
+      #define ENCODER_DIFF_CW  (encoderDiff -= encoderDirection)
+      #define ENCODER_DIFF_CCW (encoderDiff += encoderDirection)
+    #elif ENABLED(REVERSE_MENU_DIRECTION)
       #define ENCODER_DIFF_CW  (encoderDiff += encoderDirection)
       #define ENCODER_DIFF_CCW (encoderDiff -= encoderDirection)
+    #elif ENABLED(REVERSE_ENCODER_DIRECTION)
+      #define ENCODER_DIFF_CW  (encoderDiff--)
+      #define ENCODER_DIFF_CCW (encoderDiff++)
     #else
       #define ENCODER_DIFF_CW  (encoderDiff++)
       #define ENCODER_DIFF_CCW (encoderDiff--)
