@@ -106,7 +106,7 @@
  * G2  - CW ARC
  * G3  - CCW ARC
  * G4  - Dwell S<seconds> or P<milliseconds>
- * G5  - Cubic B-spline with
+ * G5  - Cubic B-spline with XYZE destination and IJPQ offsets
  * G10 - retract filament according to settings of M207
  * G11 - retract recover filament according to settings of M208
  * G28 - Home one or more axes
@@ -2546,14 +2546,7 @@ inline void gcode_G4() {
   inline void gcode_G5() {
     if (IsRunning()) {
 
-      #ifdef SF_ARC_FIX
-        bool relative_mode_backup = relative_mode;
-        relative_mode = true;
-      #endif
       gcode_get_destination();
-      #ifdef SF_ARC_FIX
-        relative_mode = relative_mode_backup;
-      #endif
 
       float offset[] = {
         code_seen('I') ? code_value() : 0.0,
@@ -2925,17 +2918,19 @@ inline void gcode_G28() {
     #endif
   #endif
 
-  // For mesh leveling move back to Z=0
+  // Enable mesh leveling again
   #if ENABLED(MESH_BED_LEVELING)
     if (mbl_was_active && home_all_axis) {
       current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
       sync_plan_position();
       mbl.active = 1;
-      current_position[Z_AXIS] = 0.0;
-      set_destination_to_current();
-      feedrate = homing_feedrate[Z_AXIS];
-      line_to_destination();
-      stepper.synchronize();
+      #if ENABLED(MESH_G28_REST_ORIGIN)
+        current_position[Z_AXIS] = 0.0;
+        set_destination_to_current();
+        feedrate = homing_feedrate[Z_AXIS];
+        line_to_destination();
+        stepper.synchronize();
+      #endif
       #if ENABLED(DEBUG_LEVELING_FEATURE)
         if (DEBUGGING(LEVELING)) DEBUG_POS("mbl_was_active", current_position);
       #endif
@@ -3013,7 +3008,7 @@ inline void gcode_G28() {
       return;
     }
 
-    int8_t ix, iy;
+    int8_t px, py;
     float z;
 
     switch (state) {
@@ -3028,10 +3023,10 @@ inline void gcode_G28() {
           SERIAL_PROTOCOLPGM("\nZ offset: ");
           SERIAL_PROTOCOL_F(mbl.z_offset, 5);
           SERIAL_PROTOCOLLNPGM("\nMeasured points:");
-          for (int y = 0; y < MESH_NUM_Y_POINTS; y++) {
-            for (int x = 0; x < MESH_NUM_X_POINTS; x++) {
+          for (py = 0; py < MESH_NUM_Y_POINTS; py++) {
+            for (px = 0; px < MESH_NUM_X_POINTS; px++) {
               SERIAL_PROTOCOLPGM("  ");
-              SERIAL_PROTOCOL_F(mbl.z_values[y][x], 5);
+              SERIAL_PROTOCOL_F(mbl.z_values[py][px], 5);
             }
             SERIAL_EOL;
           }
@@ -3063,8 +3058,8 @@ inline void gcode_G28() {
         }
         // If there's another point to sample, move there with optional lift.
         if (probe_point < (MESH_NUM_X_POINTS) * (MESH_NUM_Y_POINTS)) {
-          mbl.zigzag(probe_point, ix, iy);
-          _mbl_goto_xy(mbl.get_x(ix), mbl.get_y(iy));
+          mbl.zigzag(probe_point, px, py);
+          _mbl_goto_xy(mbl.get_probe_x(px), mbl.get_probe_y(py));
           probe_point++;
         }
         else {
@@ -3087,8 +3082,8 @@ inline void gcode_G28() {
 
       case MeshSet:
         if (code_seen('X')) {
-          ix = code_value_long() - 1;
-          if (ix < 0 || ix >= MESH_NUM_X_POINTS) {
+          px = code_value_long() - 1;
+          if (px < 0 || px >= MESH_NUM_X_POINTS) {
             SERIAL_PROTOCOLPGM("X out of range (1-" STRINGIFY(MESH_NUM_X_POINTS) ").\n");
             return;
           }
@@ -3098,8 +3093,8 @@ inline void gcode_G28() {
           return;
         }
         if (code_seen('Y')) {
-          iy = code_value_long() - 1;
-          if (iy < 0 || iy >= MESH_NUM_Y_POINTS) {
+          py = code_value_long() - 1;
+          if (py < 0 || py >= MESH_NUM_Y_POINTS) {
             SERIAL_PROTOCOLPGM("Y out of range (1-" STRINGIFY(MESH_NUM_Y_POINTS) ").\n");
             return;
           }
@@ -3115,7 +3110,7 @@ inline void gcode_G28() {
           SERIAL_PROTOCOLPGM("Z not entered.\n");
           return;
         }
-        mbl.z_values[iy][ix] = z;
+        mbl.z_values[py][px] = z;
         break;
 
       case MeshSetZOffset:
@@ -5906,21 +5901,30 @@ inline void gcode_M410() { stepper.quick_stop(); }
 
   /**
    * M421: Set a single Mesh Bed Leveling Z coordinate
+   * Use either 'M421 X<mm> Y<mm> Z<mm>' or 'M421 I<xindex> J<yindex> Z<mm>'
    */
   inline void gcode_M421() {
-    float x = 0, y = 0, z = 0;
-    bool err = false, hasX, hasY, hasZ;
-    if ((hasX = code_seen('X'))) x = code_value();
-    if ((hasY = code_seen('Y'))) y = code_value();
+    int8_t px, py;
+    float z = 0;
+    bool hasX, hasY, hasZ, hasI, hasJ;
+    if ((hasX = code_seen('X'))) px = mbl.probe_index_x(code_value());
+    if ((hasY = code_seen('Y'))) py = mbl.probe_index_y(code_value());
+    if ((hasI = code_seen('I'))) px = code_value();
+    if ((hasJ = code_seen('J'))) py = code_value();
     if ((hasZ = code_seen('Z'))) z = code_value();
 
     if (hasX && hasY && hasZ) {
 
-      int8_t ix = mbl.select_x_index(x),
-             iy = mbl.select_y_index(y);
-
-      if (ix >= 0 && iy >= 0)
-        mbl.set_z(ix, iy, z);
+      if (px >= 0 && py >= 0)
+        mbl.set_z(px, py, z);
+      else {
+        SERIAL_ERROR_START;
+        SERIAL_ERRORLNPGM(MSG_ERR_MESH_XY);
+      }
+    }
+    else if (hasI && hasJ && hasZ) {
+      if (px >= 0 && px < MESH_NUM_X_POINTS && py >= 0 && py < MESH_NUM_Y_POINTS)
+        mbl.set_z(px, py, z);
       else {
         SERIAL_ERROR_START;
         SERIAL_ERRORLNPGM(MSG_ERR_MESH_XY);
@@ -5928,7 +5932,7 @@ inline void gcode_M410() { stepper.quick_stop(); }
     }
     else {
       SERIAL_ERROR_START;
-      SERIAL_ERRORLNPGM(MSG_ERR_M421_REQUIRES_XYZ);
+      SERIAL_ERRORLNPGM(MSG_ERR_M421_PARAMETERS);
     }
   }
 
@@ -7295,52 +7299,52 @@ void mesh_buffer_line(float x, float y, float z, const float e, float feed_rate,
     set_current_to_destination();
     return;
   }
-  int pix = mbl.select_x_index(current_position[X_AXIS] - home_offset[X_AXIS]);
-  int piy = mbl.select_y_index(current_position[Y_AXIS] - home_offset[Y_AXIS]);
-  int ix = mbl.select_x_index(x - home_offset[X_AXIS]);
-  int iy = mbl.select_y_index(y - home_offset[Y_AXIS]);
-  pix = min(pix, MESH_NUM_X_POINTS - 2);
-  piy = min(piy, MESH_NUM_Y_POINTS - 2);
-  ix = min(ix, MESH_NUM_X_POINTS - 2);
-  iy = min(iy, MESH_NUM_Y_POINTS - 2);
-  if (pix == ix && piy == iy) {
+  int pcx = mbl.cel_index_x(current_position[X_AXIS] - home_offset[X_AXIS]);
+  int pcy = mbl.cel_index_y(current_position[Y_AXIS] - home_offset[Y_AXIS]);
+  int cx = mbl.cel_index_x(x - home_offset[X_AXIS]);
+  int cy = mbl.cel_index_y(y - home_offset[Y_AXIS]);
+  NOMORE(pcx, MESH_NUM_X_POINTS - 2);
+  NOMORE(pcy, MESH_NUM_Y_POINTS - 2);
+  NOMORE(cx,  MESH_NUM_X_POINTS - 2);
+  NOMORE(cy,  MESH_NUM_Y_POINTS - 2);
+  if (pcx == cx && pcy == cy) {
     // Start and end on same mesh square
     planner.buffer_line(x, y, z, e, feed_rate, extruder);
     set_current_to_destination();
     return;
   }
   float nx, ny, nz, ne, normalized_dist;
-  if (ix > pix && TEST(x_splits, ix)) {
-    nx = mbl.get_x(ix) + home_offset[X_AXIS];
+  if (cx > pcx && TEST(x_splits, cx)) {
+    nx = mbl.get_probe_x(cx) + home_offset[X_AXIS];
     normalized_dist = (nx - current_position[X_AXIS]) / (x - current_position[X_AXIS]);
     ny = current_position[Y_AXIS] + (y - current_position[Y_AXIS]) * normalized_dist;
     nz = current_position[Z_AXIS] + (z - current_position[Z_AXIS]) * normalized_dist;
     ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    CBI(x_splits, ix);
+    CBI(x_splits, cx);
   }
-  else if (ix < pix && TEST(x_splits, pix)) {
-    nx = mbl.get_x(pix) + home_offset[X_AXIS];
+  else if (cx < pcx && TEST(x_splits, pcx)) {
+    nx = mbl.get_probe_x(pcx) + home_offset[X_AXIS];
     normalized_dist = (nx - current_position[X_AXIS]) / (x - current_position[X_AXIS]);
     ny = current_position[Y_AXIS] + (y - current_position[Y_AXIS]) * normalized_dist;
     nz = current_position[Z_AXIS] + (z - current_position[Z_AXIS]) * normalized_dist;
     ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    CBI(x_splits, pix);
+    CBI(x_splits, pcx);
   }
-  else if (iy > piy && TEST(y_splits, iy)) {
-    ny = mbl.get_y(iy) + home_offset[Y_AXIS];
+  else if (cy > pcy && TEST(y_splits, cy)) {
+    ny = mbl.get_probe_y(cy) + home_offset[Y_AXIS];
     normalized_dist = (ny - current_position[Y_AXIS]) / (y - current_position[Y_AXIS]);
     nx = current_position[X_AXIS] + (x - current_position[X_AXIS]) * normalized_dist;
     nz = current_position[Z_AXIS] + (z - current_position[Z_AXIS]) * normalized_dist;
     ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    CBI(y_splits, iy);
+    CBI(y_splits, cy);
   }
-  else if (iy < piy && TEST(y_splits, piy)) {
-    ny = mbl.get_y(piy) + home_offset[Y_AXIS];
+  else if (cy < pcy && TEST(y_splits, pcy)) {
+    ny = mbl.get_probe_y(pcy) + home_offset[Y_AXIS];
     normalized_dist = (ny - current_position[Y_AXIS]) / (y - current_position[Y_AXIS]);
     nx = current_position[X_AXIS] + (x - current_position[X_AXIS]) * normalized_dist;
     nz = current_position[Z_AXIS] + (z - current_position[Z_AXIS]) * normalized_dist;
     ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    CBI(y_splits, piy);
+    CBI(y_splits, pcy);
   }
   else {
     // Already split on a border
@@ -7604,13 +7608,14 @@ void prepare_move() {
 
     float feed_rate = feedrate * feedrate_multiplier / 60 / 100.0;
 
-    millis_t previous_ms = millis();
+    millis_t next_idle_ms = millis() + 200UL;
 
     for (i = 1; i < segments; i++) { // Iterate (segments-1) times
 
+      thermalManager.manage_heater();
       millis_t now = millis();
-      if (now - previous_ms > 200UL) {
-        previous_ms = now;
+      if (ELAPSED(now, next_idle_ms)) {
+        next_idle_ms = now + 200UL;
         idle();
       }
 
@@ -7860,7 +7865,7 @@ void idle(
   host_keepalive();
   lcd_update();
   #if ENABLED(PRINTCOUNTER)
-      print_job_timer.tick();
+    print_job_timer.tick();
   #endif
 }
 

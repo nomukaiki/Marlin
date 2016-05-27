@@ -282,7 +282,6 @@ menuPosition menu_history[10];
 uint8_t menu_history_depth = 0;
 
 millis_t next_lcd_update_ms;
-uint8_t lcd_status_update_delay;
 bool ignore_click = false;
 bool wait_for_unclick;
 bool defer_return_to_status = false;
@@ -1014,9 +1013,9 @@ void lcd_cooldown() {
     lcd_goto_menu(_lcd_level_bed_moving);
 
     // _mbl_goto_xy runs the menu loop until the move is done
-    int8_t ix, iy;
-    mbl.zigzag(_lcd_level_bed_position, ix, iy);
-    _mbl_goto_xy(mbl.get_x(ix), mbl.get_y(iy));
+    int8_t px, py;
+    mbl.zigzag(_lcd_level_bed_position, px, py);
+    _mbl_goto_xy(mbl.get_probe_x(px), mbl.get_probe_y(py));
 
     // After the blocking function returns, change menus
     lcd_goto_menu(_lcd_level_bed_get_z);
@@ -2248,9 +2247,13 @@ void lcd_update() {
       }
     #endif //ULTIPANEL
 
-    // Simply redraw the Info Screen 10 times a second
-    if (currentMenu == lcd_status_screen && !(++lcd_status_update_delay % 10))
+    // We arrive here every ~100ms when idling often enough.
+    // Instead of tracking the changes simply redraw the Info Screen ~1 time a second.
+    static int8_t lcd_status_update_delay = 1; // first update one loop delayed
+    if (currentMenu == lcd_status_screen && !lcd_status_update_delay--) {
+      lcd_status_update_delay = 9;
       lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
+    }
 
     if (lcdDrawUpdate) {
 
