@@ -1,4 +1,6 @@
 /**
+ * KOSSEL JOAO
+ * 
  * Marlin 3D Printer Firmware
  * Copyright (C) 2016 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
@@ -63,36 +65,6 @@
 // For a Delta printer replace the configuration files with the files in the
 // example_configurations/delta directory.
 //
-
-#define DELTA
-#if ENABLED(DELTA)
-
-  // Make delta curves from many straight lines (linear interpolation).
-  // This is a trade-off between visible corners (not enough segments)
-  // and processor overload (too many expensive sqrt calls).
-  #define DELTA_SEGMENTS_PER_SECOND 160
-
-  // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
-
-  // Center-to-center distance of the holes in the diagonal push rods.
-  #define DELTA_DIAGONAL_ROD 317.3 + 2.5 // mm
-
-  // Horizontal offset from middle of printer to smooth rod center.
-  #define DELTA_SMOOTH_ROD_OFFSET 220.1 // mm
-
-  // Horizontal offset of the universal joints on the end effector.
-  #define DELTA_EFFECTOR_OFFSET 24.0 // mm
-
-  // Horizontal offset of the universal joints on the carriages.
-  #define DELTA_CARRIAGE_OFFSET 22.0 // mm
-
-  // Horizontal distance bridged by diagonal push rods when effector is centered.
-  #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET + 1)
-
-  // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
-  #define DELTA_PRINTABLE_RADIUS 140.0
-
-#endif
 
 // @section info
 
@@ -224,7 +196,7 @@
 #define TEMP_WINDOW     1       // (degC) Window around target to start the residency timer x degC early.
 
 // Bed temperature must be close to target for this long before M190 returns success
-#define TEMP_BED_RESIDENCY_TIME 10  // (seconds)
+#define TEMP_BED_RESIDENCY_TIME 0   // (seconds)
 #define TEMP_BED_HYSTERESIS 3       // (degC) range of +/- temperatures considered "close" to the target one
 #define TEMP_BED_WINDOW     1       // (degC) Window around target to start the residency timer x degC early.
 
@@ -240,10 +212,10 @@
 // When temperature exceeds max temp, your heater will be switched off.
 // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 // You should use MINTEMP for thermistor short/failure protection.
-#define HEATER_0_MAXTEMP 275
-#define HEATER_1_MAXTEMP 275
-#define HEATER_2_MAXTEMP 275
-#define HEATER_3_MAXTEMP 275
+#define HEATER_0_MAXTEMP 250
+#define HEATER_1_MAXTEMP 250
+#define HEATER_2_MAXTEMP 250
+#define HEATER_3_MAXTEMP 250
 #define BED_MAXTEMP 150
 
 // If you want the M105 heater power reported in watts, define the BED_WATTS, and (shared for all extruders) EXTRUDER_WATTS
@@ -272,10 +244,10 @@
   #define K1 0.95 //smoothing factor within the PID
 
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
-  // Joao Kossel k800 XL
-  #define  DEFAULT_Kp 30.77
-  #define  DEFAULT_Ki 2.57
-  #define  DEFAULT_Kd 92.27
+  // oXis Kossel k800 XL
+  //#define DEFAULT_Kp 22.04
+  //#define DEFAULT_Ki 1.65
+  //#define DEFAULT_Kd 73.67
 
   // Kossel k800 XL
   //#define DEFAULT_Kp 22.25
@@ -291,6 +263,11 @@
   //#define  DEFAULT_Kp 63.0
   //#define  DEFAULT_Ki 2.25
   //#define  DEFAULT_Kd 440
+
+  // KOSSEL JOAO
+  #define  DEFAULT_Kp 20.44
+  #define  DEFAULT_Ki 1.00
+  #define  DEFAULT_Kd 104.50
 
 #endif // PIDTEMP
 
@@ -324,9 +301,9 @@
 
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
- // #define  DEFAULT_bedKp 15.00
- // #define  DEFAULT_bedKi .04
- // #define  DEFAULT_bedKd 305.4
+  //#define  DEFAULT_bedKp 15.00
+  //#define  DEFAULT_bedKi .04
+  //#define  DEFAULT_bedKd 305.4
 
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from pidautotune
@@ -335,11 +312,11 @@
   //#define  DEFAULT_bedKd 1675.16
 
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
-  // Joao Kossel k800 XL - Silicone heater
-  #define  DEFAULT_bedKp 59.62
-  #define  DEFAULT_bedKi 7.58
-  #define  DEFAULT_bedKd 117.23
-
+  
+  // KOSSEL JOAO
+  #define  DEFAULT_bedKp 102.70
+  #define  DEFAULT_bedKi 12.29
+  #define  DEFAULT_bedKd 214.53
 #endif // PIDTEMPBED
 
 // @section extruder
@@ -383,6 +360,48 @@
 //#define COREXZ
 //#define COREYZ
 
+//===========================================================================
+//============================== Delta Settings =============================
+//===========================================================================
+// Enable DELTA kinematics and most of the default configuration for Deltas
+#define DELTA
+
+#if ENABLED(DELTA)
+
+  // Make delta curves from many straight lines (linear interpolation).
+  // This is a trade-off between visible corners (not enough segments)
+  // and processor overload (too many expensive sqrt calls).
+  #define DELTA_SEGMENTS_PER_SECOND 80
+
+  // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
+
+  // Center-to-center distance of the holes in the diagonal push rods.
+  #define DELTA_DIAGONAL_ROD 317.5 // mm                                                                            ############## ADJUSTS the printed parts size
+
+  // Horizontal offset from middle of printer to smooth rod center.
+  #define DELTA_SMOOTH_ROD_OFFSET 220.7 // mm                                                                       ############## ADJUSTS the nozzle distance to the center of bed, increase to lower the nozzle at center
+
+  // Horizontal offset of the universal joints on the end effector.
+  #define DELTA_EFFECTOR_OFFSET 24.0 // mm
+
+  // Horizontal offset of the universal joints on the carriages.
+  #define DELTA_CARRIAGE_OFFSET 22.0 // mm
+
+  // Horizontal distance bridged by diagonal push rods when effector is centered.
+  #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-(DELTA_EFFECTOR_OFFSET)-(DELTA_CARRIAGE_OFFSET) + 1)
+
+  // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
+  #define DELTA_PRINTABLE_RADIUS 140.0
+
+  // Delta calibration menu
+  // uncomment to add three points calibration menu option.
+  // See http://minow.blogspot.com/index.html#4918805519571907051
+  // If needed, adjust the X, Y, Z calibration coordinates
+  // in ultralcd.cpp@lcd_delta_calibrate_menu()
+  //#define DELTA_CALIBRATION_MENU
+
+#endif
+
 // Enable this option for Toshiba steppers
 //#define CONFIG_STEPPERS_TOSHIBA
 
@@ -397,7 +416,7 @@
 // extra connectors. Leave undefined any used for non-endstop and non-probe purposes.
 //#define USE_XMIN_PLUG
 //#define USE_YMIN_PLUG
-#define USE_ZMIN_PLUG
+#define USE_ZMIN_PLUG // a Z probe
 #define USE_XMAX_PLUG
 #define USE_YMAX_PLUG
 #define USE_ZMAX_PLUG
@@ -459,11 +478,11 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // Setting the wrong pin may have unexpected and potentially disastrous consequences.
 // Use with caution and do your homework.
 //
-//#define Z_MIN_PROBE_ENDSTOP
+#define Z_MIN_PROBE_ENDSTOP
 
 // Enable Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN to use the Z_MIN_PIN for your Z_MIN_PROBE.
 // The Z_MIN_PIN will then be used for both Z-homing and probing.
-#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
+//#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
 
 // To use a probe you must enable one of the two options above!
 
@@ -471,7 +490,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // To enable the Z probe pin but disable its use, uncomment the line below. This only affects a
 // Z probe switch if you have a separate Z min endstop also and have activated Z_MIN_PROBE_ENDSTOP above.
 // If you're using the Z MIN endstop connector for your Z probe, this has no effect.
-#define DISABLE_Z_MIN_PROBE_ENDSTOP
+//#define DISABLE_Z_MIN_PROBE_ENDSTOP
 
 // For Inverting Stepper Enable Pins (Active Low) use 0, Non Inverting (Active High) use 1
 // :{0:'Low',1:'High'}
@@ -496,7 +515,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR false
+#define INVERT_X_DIR false // DELTA does not invert
 #define INVERT_Y_DIR false
 #define INVERT_Z_DIR false
 
@@ -509,13 +528,13 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 #define INVERT_E3_DIR false
 
 // @section homing
-//#define MIN_Z_HEIGHT_FOR_HOMING 7 // (in mm) Minimal z height before homing (G28) for Z clearance above the bed, clamps, ...
+//#define MIN_Z_HEIGHT_FOR_HOMING 4 // (in mm) Minimal z height before homing (G28) for Z clearance above the bed, clamps, ...
                                     // Be sure you have this distance over your Z_MAX_POS in case.
 
 // ENDSTOP SETTINGS:
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
 // :[-1,1]
-#define X_HOME_DIR 1
+#define X_HOME_DIR 1  // deltas always home to max
 #define Y_HOME_DIR 1
 #define Z_HOME_DIR 1
 
@@ -525,8 +544,8 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // @section machine
 
 // Travel limits after homing (units are in mm)
-#define X_MIN_POS -DELTA_PRINTABLE_RADIUS
-#define Y_MIN_POS -DELTA_PRINTABLE_RADIUS
+#define X_MIN_POS -(DELTA_PRINTABLE_RADIUS)
+#define Y_MIN_POS -(DELTA_PRINTABLE_RADIUS)
 #define Z_MIN_POS 0
 #define X_MAX_POS DELTA_PRINTABLE_RADIUS
 #define Y_MAX_POS DELTA_PRINTABLE_RADIUS
@@ -577,8 +596,8 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // @section bedlevel
 
 #define AUTO_BED_LEVELING_FEATURE // Delete the comment to enable (remove // at the start of the line)
-// #define DEBUG_LEVELING_FEATURE
-// #define Z_MIN_PROBE_REPEATABILITY_TEST  // If not commented out, Z Probe Repeatability test will be included if Auto Bed Leveling is Enabled.
+//#define DEBUG_LEVELING_FEATURE
+//#define Z_MIN_PROBE_REPEATABILITY_TEST  // If not commented out, Z Probe Repeatability test will be included if Auto Bed Leveling is Enabled.
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE)
 
@@ -595,15 +614,16 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 
   // Enable this to sample the bed in a grid (least squares solution).
   // Note: this feature generates 10KB extra code size.
-  #define AUTO_BED_LEVELING_GRID
+  #define AUTO_BED_LEVELING_GRID  // Deltas only support grid mode.
 
   #if ENABLED(AUTO_BED_LEVELING_GRID)
 
-    #define DELTA_PROBEABLE_RADIUS (DELTA_PRINTABLE_RADIUS - 50)
-    #define LEFT_PROBE_BED_POSITION -DELTA_PROBEABLE_RADIUS
-    #define RIGHT_PROBE_BED_POSITION DELTA_PROBEABLE_RADIUS
-    #define FRONT_PROBE_BED_POSITION -DELTA_PROBEABLE_RADIUS
-    #define BACK_PROBE_BED_POSITION DELTA_PROBEABLE_RADIUS
+    // Set the rectangle in which to probe
+    #define DELTA_PROBEABLE_RADIUS (DELTA_PRINTABLE_RADIUS - 40)
+    #define LEFT_PROBE_BED_POSITION -(DELTA_PROBEABLE_RADIUS - 40)
+    #define RIGHT_PROBE_BED_POSITION DELTA_PROBEABLE_RADIUS - 10
+    #define FRONT_PROBE_BED_POSITION - (DELTA_PROBEABLE_RADIUS - 30)
+    #define BACK_PROBE_BED_POSITION DELTA_PROBEABLE_RADIUS - 10
 
     #define MIN_PROBE_EDGE 30 // The Z probe minimum square sides can be no smaller than this.
 
@@ -611,7 +631,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
     // Compensate by interpolating between the nearest four Z probe values for each point.
     // Useful for deltas where the print surface may appear like a bowl or dome shape.
     // Works best with AUTO_BED_LEVELING_GRID_POINTS 5 or higher.
-    #define AUTO_BED_LEVELING_GRID_POINTS 7
+    #define AUTO_BED_LEVELING_GRID_POINTS 5
 
   #else  // !AUTO_BED_LEVELING_GRID
 
@@ -643,19 +663,19 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
   //    |           |
   //    O-- FRONT --+
   //  (0,0)
-  #define X_PROBE_OFFSET_FROM_EXTRUDER -13  // X offset: -left  +right  [of the nozzle]
-  #define Y_PROBE_OFFSET_FROM_EXTRUDER -4  // Y offset: -front +behind [the nozzle]
-  #define Z_PROBE_OFFSET_FROM_EXTRUDER -0.9   // Z offset: -below +above  [the nozzle]         Increase value if after leveling the nozzle is too high from bed
+  #define X_PROBE_OFFSET_FROM_EXTRUDER 24.0     // Z probe to nozzle X offset: -left  +right
+  #define Y_PROBE_OFFSET_FROM_EXTRUDER -18.0     // Z probe to nozzle Y offset: -front +behind
+  #define Z_PROBE_OFFSET_FROM_EXTRUDER -1.1     // Z probe to nozzle Z offset: -below (always!)                                             ################   Z PROBE - Increase value if after leveling the nozzle is too high from bed
 
-  #define XY_TRAVEL_SPEED 6000         // X and Y axis travel speed between probes, in mm/min.
+  #define XY_TRAVEL_SPEED 8000         // X and Y axis travel speed between probes, in mm/min.
 
   #define Z_RAISE_BEFORE_PROBING 20   // How much the Z axis will be raised before traveling to the first probing point.
-  #define Z_RAISE_BETWEEN_PROBINGS 7 // How much the Z axis will be raised when traveling from between next probing points.
+  #define Z_RAISE_BETWEEN_PROBINGS 10 // How much the Z axis will be raised when traveling from between next probing points.
   #define Z_RAISE_AFTER_PROBING 20    // How much the Z axis will be raised after the last probing point.
 
   #define Z_PROBE_END_SCRIPT "G1 Z50 X0 Y0 F3000"
-//#define Z_PROBE_END_SCRIPT "G1 Z10 F12000\nG1 X15 Y330\nG1 Z0.5\nG1 Z10" // These commands will be executed in the end of G29 routine.
-                                                                            // Useful to retract a deployable Z probe.
+  //#define Z_PROBE_END_SCRIPT "G1 Z10 F12000\nG1 X15 Y330\nG1 Z0.5\nG1 Z10" // These commands will be executed in the end of G29 routine.
+                                                                             // Useful to retract a deployable Z probe.
 
   // Probes are sensors/switches that need to be activated before they can be used
   // and deactivated after their use.
@@ -677,6 +697,87 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
   // For example any setup that uses the nozzle itself as a probe.
   //#define MECHANICAL_PROBE
 
+  // Allen key retractable z-probe as seen on many Kossel delta printers - http://reprap.org/wiki/Kossel#Automatic_bed_leveling_probe
+  // Deploys by touching z-axis belt. Retracts by pushing the probe down. Uses Z_MIN_PIN.
+  //#define Z_PROBE_ALLEN_KEY
+
+  #if ENABLED(Z_PROBE_ALLEN_KEY)
+    // 2 or 3 sets of coordinates for deploying and retracting the spring loaded touch probe on G29,
+    // if servo actuated touch probe is not defined. Uncomment as appropriate for your printer/probe.
+
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_X 30.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_Y DELTA_PRINTABLE_RADIUS
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_FEEDRATE HOMING_FEEDRATE_XYZ
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_X 0.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_Y DELTA_PRINTABLE_RADIUS
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_FEEDRATE (HOMING_FEEDRATE_XYZ)/10
+
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_X -64.0 // Move the probe into position
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_Y 56.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_Z 23.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_FEEDRATE HOMING_FEEDRATE_XYZ
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_X -64.0 // Push it down
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_Y 56.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_Z 3.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_FEEDRATE (HOMING_FEEDRATE_XYZ)/10
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_X -64.0 // Move it up to clear
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_Y 56.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_Z 50.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_FEEDRATE HOMING_FEEDRATE_XYZ
+
+    // Kossel Mini
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_X 35.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_Y 72.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_FEEDRATE (HOMING_FEEDRATE_XYZ)/10
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_X 0.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_Y 0.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_FEEDRATE (HOMING_FEEDRATE_XYZ)/10
+
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_X -46.0 // Move the probe into position
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_Y 59.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_Z 28.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_FEEDRATE HOMING_FEEDRATE_XYZ
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_X -46.0 // Move the nozzle down further to push the probe into retracted position.
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_Y 59.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_Z 8.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_FEEDRATE (HOMING_FEEDRATE_XYZ)/10
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_X -46.0 // Raise things back up slightly so we don't bump into anything
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_Y 59.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_Z 38.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_FEEDRATE HOMING_FEEDRATE_XYZ
+
+    // Kossel Pro
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_X -105.00 // Move left but not quite so far that we'll bump the belt
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_Y 0.00
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_1_FEEDRATE HOMING_FEEDRATE_XYZ
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_X -110.00 // Move outward to position deploy pin to the left of the arm
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_Y -125.00
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_2_FEEDRATE HOMING_FEEDRATE_XYZ
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_3_X 45.00 // Move right to trigger deploy pin
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_3_Y -125.00
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_3_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_DEPLOY_3_FEEDRATE (HOMING_FEEDRATE_XYZ)/2
+
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_X 36.00 // Line up with bed retaining clip
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_Y -122.00
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_Z 75.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_1_FEEDRATE HOMING_FEEDRATE_XYZ
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_X 36.00 // move down to retract probe
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_Y -122.00
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_Z 25.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_2_FEEDRATE (HOMING_FEEDRATE_XYZ)/2
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_X 0.0  // return to 0,0,100
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_Y 0.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_Z 100.0
+    //#define Z_PROBE_ALLEN_KEY_STOW_3_FEEDRATE HOMING_FEEDRATE_XYZ
+  #endif
+
   // If you've enabled AUTO_BED_LEVELING_FEATURE and are using the Z Probe for Z Homing,
   // it is highly recommended you also enable Z_SAFE_HOMING below!
 
@@ -694,7 +795,7 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 #if ENABLED(MANUAL_HOME_POSITIONS)
   #define MANUAL_X_HOME_POS 0
   #define MANUAL_Y_HOME_POS 0
-  #define MANUAL_Z_HOME_POS 347.9 // For delta: Distance between nozzle and print surface after homing.
+  #define MANUAL_Z_HOME_POS 340.7 // For delta: Distance between nozzle and print surface after homing.                                         ###################  nozzle distance
 #endif
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
@@ -719,30 +820,33 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
  * MOVEMENT SETTINGS
  */
 
-#define HOMING_FEEDRATE {60*60, 60*60, 60*60, 0}  // set the homing speeds (mm/min)
+// delta homing speeds must be the same on xyz
+#define HOMING_FEEDRATE_XYZ (60*60)
+#define HOMING_FEEDRATE_E 0
+#define HOMING_FEEDRATE { HOMING_FEEDRATE_XYZ, HOMING_FEEDRATE_XYZ, HOMING_FEEDRATE_XYZ, HOMING_FEEDRATE_E }
 
-// default settings
+// variables to calculate steps
 #define XYZ_FULL_STEPS_PER_ROTATION 200
 #define XYZ_MICROSTEPS 16
 #define XYZ_BELT_PITCH 2
 #define XYZ_PULLEY_TEETH 16
-#define XYZ_STEPS ((XYZ_FULL_STEPS_PER_ROTATION) * (XYZ_MICROSTEPS) / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
 
-// Geared Extruder 5.1
-#define EXTRUDER_FULL_STEPS_PER_ROTATION 200
-#define EXTRUDER_MICROSTEPS 32
+// delta speeds must be the same on xyz
+#define XYZ_STEPS (XYZ_FULL_STEPS_PER_ROTATION * XYZ_MICROSTEPS / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
+
+// KOSSEL JOAO Geared Extruder 5.1
+#define STEPS_PER_REVOLUTION_E 6600
 #define EXTRUDER_GEAR_RATIO 5.18
-#define EXTRUDER_PINCH_WHEEL_DIAMETER 11.5
-#define EXTRUDER_STEPS ((EXTRUDER_FULL_STEPS_PER_ROTATION * EXTRUDER_MICROSTEPS) * EXTRUDER_GEAR_RATIO / (EXTRUDER_PINCH_WHEEL_DIAMETER * PI))
+#define PINCH_WHEEL_DIAMETER 12.0
+#define AXIS_STEPS_PER_UNIT_E (STEPS_PER_REVOLUTION_E * EXTRUDER_GEAR_RATIO / (PINCH_WHEEL_DIAMETER * PI))
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, EXTRUDER_STEPS}  // default steps per unit for small tooth 1/4
-#define DEFAULT_MAX_FEEDRATE          {95, 95, 300, 15}    // (mm/sec)
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, AXIS_STEPS_PER_UNIT_E}  // default steps per unit for small tooth 1/4
+#define DEFAULT_MAX_FEEDRATE          {200, 200, 200, 25}    // (mm/sec)
+#define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,10000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
-
-#define DEFAULT_ACCELERATION          9000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_ACCELERATION          2000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   9000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+#define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                20.0    // (mm/sec)
@@ -789,8 +893,8 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // When enabled Marlin will send a busy status message to the host
 // every couple of seconds when it can't accept commands.
 //
-#define HOST_KEEPALIVE_FEATURE        // Disable this if your host doesn't like keepalive messages
-#define DEFAULT_KEEPALIVE_INTERVAL 2  // Number of seconds between "busy" messages. Set with M113.
+#define HOST_KEEPALIVE_FEATURE       // Disable this if your host doesn't like keepalive messages
+#define DEFAULT_KEEPALIVE_INTERVAL 2 // Number of seconds between "busy" messages. Set with M113.
 
 //
 // M100 Free Memory Watcher
@@ -802,11 +906,11 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 // Preheat Constants
 #define PLA_PREHEAT_HOTEND_TEMP 180
 #define PLA_PREHEAT_HPB_TEMP 70
-#define PLA_PREHEAT_FAN_SPEED 100   // Insert Value between 0 and 255
+#define PLA_PREHEAT_FAN_SPEED 255   // Insert Value between 0 and 255
 
 #define ABS_PREHEAT_HOTEND_TEMP 240
-#define ABS_PREHEAT_HPB_TEMP 110
-#define ABS_PREHEAT_FAN_SPEED 100   // Insert Value between 0 and 255
+#define ABS_PREHEAT_HPB_TEMP 100
+#define ABS_PREHEAT_FAN_SPEED 255   // Insert Value between 0 and 255
 
 //
 // Print job timer
@@ -1217,8 +1321,8 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
   #define FILAMENT_SENSOR_EXTRUDER_NUM 0   //The number of the extruder that has the filament sensor (0,1,2)
   #define MEASUREMENT_DELAY_CM        14   //measurement delay in cm.  This is the distance from filament sensor to middle of barrel
 
-  #define MEASURED_UPPER_LIMIT         2.00  //upper limit factor used for sensor reading validation in mm
-  #define MEASURED_LOWER_LIMIT         1.60  //lower limit factor for sensor reading validation in mm
+  #define MEASURED_UPPER_LIMIT         3.30  //upper limit factor used for sensor reading validation in mm
+  #define MEASURED_LOWER_LIMIT         1.90  //lower limit factor for sensor reading validation in mm
   #define MAX_MEASUREMENT_DELAY       20     //delay buffer size in bytes (1 byte = 1cm)- limits maximum measurement delay allowable (must be larger than MEASUREMENT_DELAY_CM  and lower number saves RAM)
 
   #define DEFAULT_MEASURED_FILAMENT_DIA  DEFAULT_NOMINAL_FILAMENT_DIA  //set measured to nominal initially
@@ -1231,3 +1335,4 @@ const bool Z_MIN_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the l
 #include "thermistortables.h"
 
 #endif //CONFIGURATION_H
+
