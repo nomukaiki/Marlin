@@ -162,6 +162,8 @@
   #define RAMPS_D10_PIN 10
 #endif
 
+#define EXTRUDER_FAN_PIN     11
+
 #define HEATER_0_PIN     RAMPS_D10_PIN
 
 #if ENABLED(IS_RAMPS_EFB)                      // Hotend, Fan, Bed

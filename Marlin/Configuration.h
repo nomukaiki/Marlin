@@ -337,9 +337,9 @@
   //#define  DEFAULT_Kd 440
 
   // KOSSEL JOAO NOZZLE
-  #define  DEFAULT_Kp 41.06
-  #define  DEFAULT_Ki 6.23
-  #define  DEFAULT_Kd 67.60
+  #define  DEFAULT_Kp 41.09
+  #define  DEFAULT_Ki 5.97
+  #define  DEFAULT_Kd 70.69
 
 #endif // PIDTEMP
 
