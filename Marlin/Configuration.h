@@ -1647,6 +1647,4 @@
   //#define FILAMENT_LCD_DISPLAY
 #endif
 
-#include "thermistortables.h"
-
 #endif // CONFIGURATION_H
