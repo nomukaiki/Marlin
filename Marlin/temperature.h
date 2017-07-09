@@ -27,7 +27,6 @@
 #ifndef TEMPERATURE_H
 #define TEMPERATURE_H
 
-#include "planner.h"
 #include "thermistortables.h"
 
 #include "MarlinConfig.h"
@@ -82,6 +81,10 @@ enum ADCSensorState {
     Prepare_FILWIDTH,
     Measure_FILWIDTH,
   #endif
+  #if ENABLED(ADC_KEYPAD)
+    Prepare_ADC_KEY,
+    Measure_ADC_KEY,
+  #endif
   SensorsReady, // Temperatures ready. Delay the next round of readings to let ADC pins settle.
   StartupDelay  // Startup, delay initial temp reading a tiny bit so the hardware can settle
 };
@@ -93,27 +96,32 @@ enum ADCSensorState {
 
 #define ACTUAL_ADC_SAMPLES max(int(MIN_ADC_ISR_LOOPS), int(SensorsReady))
 
+#if !HAS_HEATER_BED
+  constexpr int16_t target_temperature_bed = 0;
+#endif
+
 class Temperature {
 
   public:
 
     static float current_temperature[HOTENDS],
                  current_temperature_bed;
-    static int   current_temperature_raw[HOTENDS],
-                 target_temperature[HOTENDS],
-                 current_temperature_bed_raw,
-                 target_temperature_bed;
+    static int16_t current_temperature_raw[HOTENDS],
+                   target_temperature[HOTENDS],
+                   current_temperature_bed_raw;
+
+    #if HAS_HEATER_BED
+      static int16_t target_temperature_bed;
+    #endif
 
     static volatile bool in_temp_isr;
 
-    #if ENABLED(TEMP_SENSOR_1_AS_REDUNDANT)
-      static float redundant_temperature;
-    #endif
-
-    static uint8_t soft_pwm_bed;
+    static uint8_t soft_pwm_amount[HOTENDS],
+                   soft_pwm_amount_bed;
 
     #if ENABLED(FAN_SOFT_PWM)
-      static uint8_t fanSpeedSoftPwm[FAN_COUNT];
+      static uint8_t soft_pwm_amount_fan[FAN_COUNT],
+                     soft_pwm_count_fan[FAN_COUNT];
     #endif
 
     #if ENABLED(PIDTEMP) || ENABLED(PIDTEMPBED)
@@ -157,18 +165,18 @@ class Temperature {
     #endif
 
     #if WATCH_HOTENDS
-      static int watch_target_temp[HOTENDS];
+      static uint16_t watch_target_temp[HOTENDS];
       static millis_t watch_heater_next_ms[HOTENDS];
     #endif
 
     #if WATCH_THE_BED
-      static int watch_target_bed_temp;
+      static uint16_t watch_target_bed_temp;
       static millis_t watch_bed_next_ms;
     #endif
 
     #if ENABLED(PREVENT_COLD_EXTRUSION)
       static bool allow_cold_extrude;
-      static float extrude_min_temp;
+      static int16_t extrude_min_temp;
       static bool tooColdToExtrude(uint8_t e) {
         #if HOTENDS == 1
           UNUSED(e);
@@ -182,7 +190,7 @@ class Temperature {
   private:
 
     #if ENABLED(TEMP_SENSOR_1_AS_REDUNDANT)
-      static int redundant_temperature_raw;
+      static uint16_t redundant_temperature_raw;
       static float redundant_temperature;
     #endif
 
@@ -217,50 +225,61 @@ class Temperature {
       static millis_t next_bed_check_ms;
     #endif
 
-    static unsigned long raw_temp_value[MAX_EXTRUDERS],
-                         raw_temp_bed_value;
+    static uint16_t raw_temp_value[MAX_EXTRUDERS],
+                    raw_temp_bed_value;
 
     // Init min and max temp with extreme values to prevent false errors during startup
-    static int minttemp_raw[HOTENDS],
-               maxttemp_raw[HOTENDS],
-               minttemp[HOTENDS],
-               maxttemp[HOTENDS];
+    static int16_t minttemp_raw[HOTENDS],
+                   maxttemp_raw[HOTENDS],
+                   minttemp[HOTENDS],
+                   maxttemp[HOTENDS];
 
     #ifdef MAX_CONSECUTIVE_LOW_TEMPERATURE_ERROR_ALLOWED
-      static int consecutive_low_temperature_error[HOTENDS];
+      static uint8_t consecutive_low_temperature_error[HOTENDS];
     #endif
 
     #ifdef MILLISECONDS_PREHEAT_TIME
-      static unsigned long preheat_end_time[HOTENDS];
+      static millis_t preheat_end_time[HOTENDS];
     #endif
 
     #ifdef BED_MINTEMP
-      static int bed_minttemp_raw;
+      static int16_t bed_minttemp_raw;
     #endif
 
     #ifdef BED_MAXTEMP
-      static int bed_maxttemp_raw;
+      static int16_t bed_maxttemp_raw;
     #endif
 
     #if ENABLED(FILAMENT_WIDTH_SENSOR)
-      static int meas_shift_index;  // Index of a delayed sample in buffer
+      static int8_t meas_shift_index;  // Index of a delayed sample in buffer
     #endif
 
     #if HAS_AUTO_FAN
       static millis_t next_auto_fan_check_ms;
     #endif
 
-    static uint8_t soft_pwm[HOTENDS];
-
-    #if ENABLED(FAN_SOFT_PWM)
-      static uint8_t soft_pwm_fan[FAN_COUNT];
+    #if ENABLED(FILAMENT_WIDTH_SENSOR)
+      static uint16_t current_raw_filwidth; // Measured filament diameter - one extruder only
     #endif
 
-    #if ENABLED(FILAMENT_WIDTH_SENSOR)
-      static int current_raw_filwidth;  //Holds measured filament diameter - one extruder only
+    #if ENABLED(PROBING_HEATERS_OFF)
+      static bool paused;
+    #endif
+
+    #if HEATER_IDLE_HANDLER
+      static millis_t heater_idle_timeout_ms[HOTENDS];
+      static bool heater_idle_timeout_exceeded[HOTENDS];
+      #if HAS_TEMP_BED
+        static millis_t bed_idle_timeout_ms;
+        static bool bed_idle_timeout_exceeded;
+      #endif
     #endif
 
   public:
+    #if ENABLED(ADC_KEYPAD)
+      static uint32_t current_ADCKey_raw;
+      static uint8_t ADCKey_count;
+    #endif
 
     /**
      * Instance Methods
@@ -284,8 +303,7 @@ class Temperature {
     /**
      * Call periodically to manage heaters
      */
-    //static void manage_heater(); // changed to address compiler error
-    static void manage_heater()  __attribute__((__optimize__("O2")));
+    static void manage_heater() _O2; // Added _O2 to work around a compiler error
 
     /**
      * Preheating hotends
@@ -332,22 +350,23 @@ class Temperature {
     static float degBed() { return current_temperature_bed; }
 
     #if ENABLED(SHOW_TEMP_ADC_VALUES)
-    static float rawHotendTemp(uint8_t e) {
-      #if HOTENDS == 1
-        UNUSED(e);
-      #endif
-      return current_temperature_raw[HOTEND_INDEX];
-    }
-    static float rawBedTemp() { return current_temperature_bed_raw; }
+      static int16_t rawHotendTemp(uint8_t e) {
+        #if HOTENDS == 1
+          UNUSED(e);
+        #endif
+        return current_temperature_raw[HOTEND_INDEX];
+      }
+      static int16_t rawBedTemp() { return current_temperature_bed_raw; }
     #endif
 
-    static float degTargetHotend(uint8_t e) {
+    static int16_t degTargetHotend(uint8_t e) {
       #if HOTENDS == 1
         UNUSED(e);
       #endif
       return target_temperature[HOTEND_INDEX];
     }
-    static float degTargetBed() { return target_temperature_bed; }
+
+    static int16_t degTargetBed() { return target_temperature_bed; }
 
     #if WATCH_HOTENDS
       static void start_watching_heater(uint8_t e = 0);
@@ -357,14 +376,14 @@ class Temperature {
       static void start_watching_bed();
     #endif
 
-    static void setTargetHotend(const float& celsius, uint8_t e) {
+    static void setTargetHotend(const int16_t celsius, uint8_t e) {
       #if HOTENDS == 1
         UNUSED(e);
       #endif
       #ifdef MILLISECONDS_PREHEAT_TIME
-        if (celsius == 0.0f)
+        if (celsius == 0)
           reset_preheat_time(HOTEND_INDEX);
-        else if (target_temperature[HOTEND_INDEX] == 0.0f)
+        else if (target_temperature[HOTEND_INDEX] == 0)
           start_preheat_time(HOTEND_INDEX);
       #endif
       target_temperature[HOTEND_INDEX] = celsius;
@@ -373,10 +392,18 @@ class Temperature {
       #endif
     }
 
-    static void setTargetBed(const float& celsius) {
-      target_temperature_bed = celsius;
-      #if WATCH_THE_BED
-        start_watching_bed();
+    static void setTargetBed(const int16_t celsius) {
+      #if HAS_HEATER_BED
+        target_temperature_bed =
+          #ifdef BED_MAXTEMP
+            min(celsius, BED_MAXTEMP)
+          #else
+            celsius
+          #endif
+        ;
+        #if WATCH_THE_BED
+          start_watching_bed();
+        #endif
       #endif
     }
 
@@ -418,16 +445,6 @@ class Temperature {
      */
     static void updatePID();
 
-    #if ENABLED(AUTOTEMP)
-      static void autotempShutdown() {
-        if (planner.autotemp_enabled) {
-          planner.autotemp_enabled = false;
-          if (degTargetHotend(EXTRUDER_IDX) > planner.autotemp_min)
-            setTargetHotend(0, EXTRUDER_IDX);
-        }
-      }
-    #endif
-
     #if ENABLED(BABYSTEPPING)
 
       static void babystep_axis(const AxisEnum axis, const int distance) {
@@ -462,6 +479,58 @@ class Temperature {
 
     #endif // BABYSTEPPING
 
+    #if ENABLED(PROBING_HEATERS_OFF)
+      static void pause(const bool p);
+      static bool is_paused() { return paused; }
+    #endif
+
+    #if HEATER_IDLE_HANDLER
+      static void start_heater_idle_timer(uint8_t e, millis_t timeout_ms) {
+        #if HOTENDS == 1
+          UNUSED(e);
+        #endif
+        heater_idle_timeout_ms[HOTEND_INDEX] = millis() + timeout_ms;
+        heater_idle_timeout_exceeded[HOTEND_INDEX] = false;
+      }
+
+      static void reset_heater_idle_timer(uint8_t e) {
+        #if HOTENDS == 1
+          UNUSED(e);
+        #endif
+        heater_idle_timeout_ms[HOTEND_INDEX] = 0;
+        heater_idle_timeout_exceeded[HOTEND_INDEX] = false;
+        #if WATCH_HOTENDS
+          start_watching_heater(HOTEND_INDEX);
+        #endif
+      }
+
+      static bool is_heater_idle(uint8_t e) {
+        #if HOTENDS == 1
+          UNUSED(e);
+        #endif
+        return heater_idle_timeout_exceeded[HOTEND_INDEX];
+      }
+
+      #if HAS_TEMP_BED
+        static void start_bed_idle_timer(millis_t timeout_ms) {
+          bed_idle_timeout_ms = millis() + timeout_ms;
+          bed_idle_timeout_exceeded = false;
+        }
+
+        static void reset_bed_idle_timer() {
+          bed_idle_timeout_ms = 0;
+          bed_idle_timeout_exceeded = false;
+          #if WATCH_THE_BED
+            start_watching_bed();
+          #endif
+        }
+
+        static bool is_bed_idle() {
+          return bed_idle_timeout_exceeded;
+        }
+      #endif
+    #endif
+
   private:
 
     static void set_current_temp_raw();
@@ -474,15 +543,15 @@ class Temperature {
 
     static void checkExtruderAutoFans();
 
-    static float get_pid_output(int e);
+    static float get_pid_output(const int8_t e);
 
     #if ENABLED(PIDTEMPBED)
       static float get_pid_output_bed();
     #endif
 
-    static void _temp_error(int e, const char* serial_msg, const char* lcd_msg);
-    static void min_temp_error(int8_t e);
-    static void max_temp_error(int8_t e);
+    static void _temp_error(const int8_t e, const char * const serial_msg, const char * const lcd_msg);
+    static void min_temp_error(const int8_t e);
+    static void max_temp_error(const int8_t e);
 
     #if ENABLED(THERMAL_PROTECTION_HOTENDS) || HAS_THERMALLY_PROTECTED_BED
 

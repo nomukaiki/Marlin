@@ -36,8 +36,7 @@
   enum MBLStatus {
     MBL_STATUS_NONE = 0,
     MBL_STATUS_HAS_MESH_BIT = 0,
-    MBL_STATUS_ACTIVE_BIT = 1,
-    MBL_STATUS_REACTIVATE_BIT = 2
+    MBL_STATUS_ACTIVE_BIT = 1
   };
 
   #define MESH_X_DIST ((MESH_MAX_X - (MESH_MIN_X)) / (GRID_MAX_POINTS_X - 1))
@@ -61,8 +60,6 @@
     static void set_active(const bool onOff)   { onOff ? SBI(status, MBL_STATUS_ACTIVE_BIT) : CBI(status, MBL_STATUS_ACTIVE_BIT); }
     static bool has_mesh()                     { return TEST(status, MBL_STATUS_HAS_MESH_BIT); }
     static void set_has_mesh(const bool onOff) { onOff ? SBI(status, MBL_STATUS_HAS_MESH_BIT) : CBI(status, MBL_STATUS_HAS_MESH_BIT); }
-    static bool reactivate()                   { bool b = TEST(status, MBL_STATUS_REACTIVATE_BIT); CBI(status, MBL_STATUS_REACTIVATE_BIT); return b; }
-    static void set_reactivate(const bool onOff) { onOff ? SBI(status, MBL_STATUS_REACTIVATE_BIT) : CBI(status, MBL_STATUS_REACTIVATE_BIT); }
 
     static inline void zigzag(const int8_t index, int8_t &px, int8_t &py) {
       px = index % (GRID_MAX_POINTS_X);
@@ -97,8 +94,8 @@
     }
 
     static float calc_z0(const float &a0, const float &a1, const float &z1, const float &a2, const float &z2) {
-      const float delta_z = (z2 - z1) / (a2 - a1);
-      const float delta_a = a0 - a1;
+      const float delta_z = (z2 - z1) / (a2 - a1),
+                  delta_a = a0 - a1;
       return z1 + delta_a * delta_z;
     }
 
@@ -122,4 +119,4 @@
 
   extern mesh_bed_leveling mbl;
 
-#endif  // MESH_BED_LEVELING
+#endif // MESH_BED_LEVELING
