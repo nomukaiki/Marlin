@@ -51,23 +51,23 @@
  * G3   - CCW ARC
  * G4   - Dwell S<seconds> or P<milliseconds>
  * G5   - Cubic B-spline with XYZE destination and IJPQ offsets
- * G10  - Retract filament according to settings of M207
- * G11  - Retract recover filament according to settings of M208
- * G12  - Clean tool
+ * G10  - Retract filament according to settings of M207 (Requires FWRETRACT)
+ * G11  - Retract recover filament according to settings of M208 (Requires FWRETRACT)
+ * G12  - Clean tool (Requires NOZZLE_CLEAN_FEATURE)
  * G17  - Select Plane XY (Requires CNC_WORKSPACE_PLANES)
  * G18  - Select Plane ZX (Requires CNC_WORKSPACE_PLANES)
  * G19  - Select Plane YZ (Requires CNC_WORKSPACE_PLANES)
- * G20  - Set input units to inches
- * G21  - Set input units to millimeters
+ * G20  - Set input units to inches (Requires INCH_MODE_SUPPORT)
+ * G21  - Set input units to millimeters (Requires INCH_MODE_SUPPORT)
  * G26  - Mesh Validation Pattern (Requires UBL_G26_MESH_VALIDATION)
  * G27  - Park Nozzle (Requires NOZZLE_PARK_FEATURE)
  * G28  - Home one or more axes
- * G29  - Detailed Z probe, probes the bed at 3 or more points.  Will fail if you haven't homed yet.
+ * G29  - Start or continue the bed leveling probe procedure (Requires bed leveling)
  * G30  - Single Z probe, probes bed at X Y location (defaults to current XY location)
  * G31  - Dock sled (Z_PROBE_SLED only)
  * G32  - Undock sled (Z_PROBE_SLED only)
  * G33  - Delta Auto-Calibration (Requires DELTA_AUTO_CALIBRATION)
- * G38  - Probe target - similar to G28 except it uses the Z_MIN_PROBE for all three axes
+ * G38  - Probe in any direction using the Z_MIN_PROBE (Requires G38_PROBE_TARGET)
  * G42  - Coordinated move to a mesh point (Requires AUTO_BED_LEVELING_UBL)
  * G90  - Use Absolute Coordinates
  * G91  - Use Relative Coordinates
@@ -261,7 +261,7 @@
 #if HAS_ABL
   #include "vector_3.h"
   #if ENABLED(AUTO_BED_LEVELING_LINEAR)
-    #include "qr_solve.h"
+    #include "least_squares_fit.h"
   #endif
 #elif ENABLED(MESH_BED_LEVELING)
   #include "mesh_bed_leveling.h"
@@ -277,6 +277,10 @@
 
 #if ENABLED(USE_WATCHDOG)
   #include "watchdog.h"
+#endif
+
+#if ENABLED(NEOPIXEL_RGBW_LED)
+  #include <Adafruit_NeoPixel.h>
 #endif
 
 #if ENABLED(BLINKM)
@@ -427,16 +431,10 @@ static float saved_feedrate_mm_s;
 int16_t feedrate_percentage = 100, saved_feedrate_percentage,
     flow_percentage[EXTRUDERS] = ARRAY_BY_EXTRUDERS1(100);
 
+// Initialized by settings.load()
 bool axis_relative_modes[] = AXIS_RELATIVE_MODES,
-     volumetric_enabled =
-        #if ENABLED(VOLUMETRIC_DEFAULT_ON)
-          true
-        #else
-          false
-        #endif
-      ;
-float filament_size[EXTRUDERS] = ARRAY_BY_EXTRUDERS1(DEFAULT_NOMINAL_FILAMENT_DIA),
-      volumetric_multiplier[EXTRUDERS] = ARRAY_BY_EXTRUDERS1(1.0);
+     volumetric_enabled;
+float filament_size[EXTRUDERS], volumetric_multiplier[EXTRUDERS];
 
 #if HAS_WORKSPACE_OFFSET
   #if HAS_POSITION_SHIFT
@@ -513,7 +511,7 @@ static millis_t stepper_inactive_time = (DEFAULT_STEPPER_DEACTIVE_TIME) * 1000UL
 static uint8_t target_extruder;
 
 #if HAS_BED_PROBE
-  float zprobe_zoffset = Z_PROBE_OFFSET_FROM_EXTRUDER;
+  float zprobe_zoffset; // Initialized by settings.load()
 #endif
 
 #if HAS_ABL
@@ -542,18 +540,12 @@ static uint8_t target_extruder;
 #endif
 
 #if ENABLED(Z_DUAL_ENDSTOPS)
-  float z_endstop_adj =
-    #ifdef Z_DUAL_ENDSTOPS_ADJUSTMENT
-      Z_DUAL_ENDSTOPS_ADJUSTMENT
-    #else
-      0
-    #endif
-  ;
+  float z_endstop_adj;
 #endif
 
 // Extruder offsets
 #if HOTENDS > 1
-  float hotend_offset[XYZ][HOTENDS];
+  float hotend_offset[XYZ][HOTENDS]; // Initialized by settings.load()
 #endif
 
 #if HAS_Z_SERVO_ENDSTOP
@@ -561,8 +553,8 @@ static uint8_t target_extruder;
 #endif
 
 #if ENABLED(BARICUDA)
-  int baricuda_valve_pressure = 0;
-  int baricuda_e_to_p_pressure = 0;
+  uint8_t baricuda_valve_pressure = 0,
+          baricuda_e_to_p_pressure = 0;
 #endif
 
 #if ENABLED(FWRETRACT)
@@ -596,8 +588,7 @@ static uint8_t target_extruder;
   float delta[ABC],
         endstop_adj[ABC] = { 0 };
 
-  // These values are loaded or reset at boot time when setup() calls
-  // settings.load(), which calls recalc_delta_settings().
+  // Initialized by settings.load()
   float delta_radius,
         delta_tower_angle_trim[2],
         delta_tower[ABC][2],
@@ -981,12 +972,60 @@ void servo_init() {
 
 #if HAS_COLOR_LEDS
 
+  #if ENABLED(NEOPIXEL_RGBW_LED)
+
+    Adafruit_NeoPixel pixels(NEOPIXEL_PIXELS, NEOPIXEL_PIN, NEO_GRBW + NEO_KHZ800);
+
+    void set_neopixel_color(const uint32_t color) {
+      for (uint16_t i = 0; i < pixels.numPixels(); ++i)
+        pixels.setPixelColor(i, color);
+      pixels.show();
+    }
+
+    void setup_neopixel() {
+      pixels.setBrightness(255); // 0 - 255 range
+      pixels.begin();
+      pixels.show(); // initialize to all off
+
+      #if ENABLED(NEOPIXEL_STARTUP_TEST)
+        delay(2000);
+        set_neopixel_color(pixels.Color(255, 0, 0, 0));  // red
+        delay(2000);
+        set_neopixel_color(pixels.Color(0, 255, 0, 0));  // green
+        delay(2000);
+        set_neopixel_color(pixels.Color(0, 0, 255, 0));  // blue
+        delay(2000);
+      #endif
+      set_neopixel_color(pixels.Color(0, 0, 0, 255));    // white
+    }
+
+  #endif // NEOPIXEL_RGBW_LED
+
   void set_led_color(
     const uint8_t r, const uint8_t g, const uint8_t b
-      #if ENABLED(RGBW_LED)
-        , const uint8_t w=0
+      #if ENABLED(RGBW_LED) || ENABLED(NEOPIXEL_RGBW_LED)
+        , const uint8_t w = 0
+        #if ENABLED(NEOPIXEL_RGBW_LED)
+          , bool isSequence = false
+        #endif
       #endif
   ) {
+
+    #if ENABLED(NEOPIXEL_RGBW_LED)
+
+      const uint32_t color = pixels.Color(r, g, b, w);
+      static int nextLed = 0;
+
+      if (!isSequence)
+        set_neopixel_color(color);
+      else {
+        pixels.setPixelColor(nextLed, color);
+        pixels.show();
+        if (++nextLed >= pixels.numPixels()) nextLed = 0;
+        return;
+      }
+
+    #endif
 
     #if ENABLED(BLINKM)
 
@@ -3242,7 +3281,7 @@ inline void gcode_G0_G1(
       if (autoretract_enabled && !(parser.seen('X') || parser.seen('Y') || parser.seen('Z')) && parser.seen('E')) {
         const float echange = destination[E_AXIS] - current_position[E_AXIS];
         // Is this move an attempt to retract or recover?
-        if ((echange < -MIN_RETRACT && !retracted[active_extruder]) || (echange > MIN_RETRACT && retracted[active_extruder])) {
+        if ((echange < -(MIN_RETRACT) && !retracted[active_extruder]) || (echange > MIN_RETRACT && retracted[active_extruder])) {
           current_position[E_AXIS] = destination[E_AXIS]; // hide the slicer-generated retract/recover from calculations
           sync_plan_position_e();  // AND from the planner
           retract(!retracted[active_extruder]);
@@ -3403,19 +3442,23 @@ inline void gcode_G4() {
 
   /**
    * G10 - Retract filament according to settings of M207
-   * G11 - Recover filament according to settings of M208
    */
-  inline void gcode_G10_G11(bool doRetract=false) {
+  inline void gcode_G10() {
     #if EXTRUDERS > 1
-      if (doRetract)
-        retracted_swap[active_extruder] = parser.boolval('S'); // checks for swap retract argument
+      const bool rs = parser.boolval('S');
+      retracted_swap[active_extruder] = rs; // Use 'S' for swap, default to false
     #endif
-    retract(doRetract
-     #if EXTRUDERS > 1
-      , retracted_swap[active_extruder]
-     #endif
+    retract(true
+      #if EXTRUDERS > 1
+        , rs
+      #endif
     );
   }
+
+  /**
+   * G11 - Recover filament according to settings of M208
+   */
+  inline void gcode_G11() { retract(false); }
 
 #endif // FWRETRACT
 
@@ -4336,8 +4379,8 @@ void home_all_axes() { gcode_G28(true); }
         ABL_VAR int indexIntoAB[GRID_MAX_POINTS_X][GRID_MAX_POINTS_Y];
 
         ABL_VAR float eqnAMatrix[GRID_MAX_POINTS * 3], // "A" matrix of the linear system of equations
-                     eqnBVector[GRID_MAX_POINTS],     // "B" vector of Z points
-                     mean;
+                      eqnBVector[GRID_MAX_POINTS],     // "B" vector of Z points
+                      mean;
       #endif
 
     #elif ENABLED(AUTO_BED_LEVELING_3POINT)
@@ -4352,6 +4395,11 @@ void home_all_axes() { gcode_G28(true); }
       };
 
     #endif // AUTO_BED_LEVELING_3POINT
+
+    #if ENABLED(AUTO_BED_LEVELING_LINEAR)
+      struct linear_fit_data lsf_results;
+      incremental_LSF_reset(&lsf_results);
+    #endif
 
     /**
      * On the initial G29 fetch command parameters.
@@ -4549,11 +4597,7 @@ void home_all_axes() { gcode_G28(true); }
           abl_should_enable = false;
         }
 
-      #elif ENABLED(AUTO_BED_LEVELING_LINEAR)
-
-        mean = 0.0;
-
-      #endif // AUTO_BED_LEVELING_LINEAR
+      #endif // AUTO_BED_LEVELING_BILINEAR
 
       #if ENABLED(AUTO_BED_LEVELING_3POINT)
 
@@ -4621,6 +4665,8 @@ void home_all_axes() { gcode_G28(true); }
           eqnAMatrix[abl_probe_index + 0 * abl2] = xProbe;
           eqnAMatrix[abl_probe_index + 1 * abl2] = yProbe;
           eqnAMatrix[abl_probe_index + 2 * abl2] = 1;
+
+          incremental_LSF(&lsf_results, xProbe, yProbe, measured_z);
 
         #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
 
@@ -4794,6 +4840,8 @@ void home_all_axes() { gcode_G28(true); }
               eqnAMatrix[abl_probe_index + 1 * abl2] = yProbe;
               eqnAMatrix[abl_probe_index + 2 * abl2] = 1;
 
+              incremental_LSF(&lsf_results, xProbe, yProbe, measured_z);
+
             #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
 
               z_values[xCount][yCount] = measured_z + zoffset;
@@ -4894,7 +4942,11 @@ void home_all_axes() { gcode_G28(true); }
        * so Vx = -a Vy = -b Vz = 1 (we want the vector facing towards positive Z
        */
       float plane_equation_coefficients[3];
-      qr_solve(plane_equation_coefficients, abl2, 3, eqnAMatrix, eqnBVector);
+
+      finish_incremental_LSF(&lsf_results);
+      plane_equation_coefficients[0] = -lsf_results.A;  // We should be able to eliminate the '-' on these three lines and down below
+      plane_equation_coefficients[1] = -lsf_results.B;  // but that is not yet tested.
+      plane_equation_coefficients[2] = -lsf_results.D;
 
       mean /= abl2;
 
@@ -4914,11 +4966,10 @@ void home_all_axes() { gcode_G28(true); }
       }
 
       // Create the matrix but don't correct the position yet
-      if (!dryrun) {
+      if (!dryrun)
         planner.bed_level_matrix = matrix_3x3::create_look_at(
-          vector_3(-plane_equation_coefficients[0], -plane_equation_coefficients[1], 1)
+          vector_3(-plane_equation_coefficients[0], -plane_equation_coefficients[1], 1)    // We can eliminate the '-' here and up above
         );
-      }
 
       // Show the Topography map if enabled
       if (do_topography_map) {
@@ -5168,11 +5219,28 @@ void home_all_axes() { gcode_G28(true); }
       SERIAL_PROTOCOL_F(f, 2);
     }
 
+    inline void print_G33_settings(const bool end_stops, const bool tower_angles){ // TODO echo these to LCD ???
+      SERIAL_PROTOCOLPAIR(".Height:", DELTA_HEIGHT + home_offset[Z_AXIS]);
+      if (end_stops) {
+        print_signed_float(PSTR("  Ex"), endstop_adj[A_AXIS]);
+        print_signed_float(PSTR("Ey"), endstop_adj[B_AXIS]);
+        print_signed_float(PSTR("Ez"), endstop_adj[C_AXIS]);
+        SERIAL_PROTOCOLPAIR("    Radius:", delta_radius);
+      }
+      SERIAL_EOL();
+      if (tower_angles) {
+        SERIAL_PROTOCOLPGM(".Tower angle :  ");
+        print_signed_float(PSTR("Tx"), delta_tower_angle_trim[A_AXIS]);
+        print_signed_float(PSTR("Ty"), delta_tower_angle_trim[B_AXIS]);
+        SERIAL_PROTOCOLLNPGM("  Tz:+0.00");
+      }
+    }
+
     inline void gcode_G33() {
 
       const int8_t probe_points = parser.intval('P', DELTA_CALIBRATION_DEFAULT_POINTS);
       if (!WITHIN(probe_points, 1, 7)) {
-        SERIAL_PROTOCOLLNPGM("?(P)oints is implausible (1 to 7).");
+        SERIAL_PROTOCOLLNPGM("?(P)oints is implausible (1-7).");
         return;
       }
 
@@ -5256,26 +5324,13 @@ void home_all_axes() { gcode_G28(true); }
 
       // print settings
 
-      SERIAL_PROTOCOLPGM("Checking... AC");
+      const char *checkingac = PSTR("Checking... AC"); // TODO: Make translatable string
+      serialprintPGM(checkingac);
       if (verbose_level == 0) SERIAL_PROTOCOLPGM(" (DRY-RUN)");
       SERIAL_EOL();
-      LCD_MESSAGEPGM("Checking... AC"); // TODO: Make translatable string
+      lcd_setstatusPGM(checkingac);
 
-      SERIAL_PROTOCOLPAIR(".Height:", DELTA_HEIGHT + home_offset[Z_AXIS]);
-      if (!_1p_calibration) {
-        print_signed_float(PSTR("  Ex"), endstop_adj[A_AXIS]);
-        print_signed_float(PSTR("Ey"), endstop_adj[B_AXIS]);
-        print_signed_float(PSTR("Ez"), endstop_adj[C_AXIS]);
-        SERIAL_PROTOCOLPAIR("    Radius:", delta_radius);
-      }
-      SERIAL_EOL();
-      if (_7p_calibration && towers_set) {
-        SERIAL_PROTOCOLPGM(".Tower angle :  ");
-        print_signed_float(PSTR("Tx"), delta_tower_angle_trim[A_AXIS]);
-        print_signed_float(PSTR("Ty"), delta_tower_angle_trim[B_AXIS]);
-        SERIAL_PROTOCOLPGM("  Tz:+0.00");
-        SERIAL_EOL();
-      }
+      print_G33_settings(!_1p_calibration, _7p_calibration && towers_set);
 
       #if DISABLED(PROBE_MANUALLY)
         home_offset[Z_AXIS] -= probe_pt(dx, dy, stow_after_each, 1, false); // 1st probe to set height
@@ -5345,7 +5400,6 @@ void home_all_axes() { gcode_G28(true); }
             N++;
           }
         zero_std_dev_old = zero_std_dev;
-        NOMORE(zero_std_dev_min, zero_std_dev);
         zero_std_dev = round(sqrt(S2 / N) * 1000.0) / 1000.0 + 0.00001;
 
         // Solve matrices
@@ -5436,8 +5490,9 @@ void home_all_axes() { gcode_G28(true); }
 
           recalc_delta_settings(delta_radius, delta_diagonal_rod);
         }
+        NOMORE(zero_std_dev_min, zero_std_dev);
 
-         // print report
+        // print report
 
         if (verbose_level != 1) {
           SERIAL_PROTOCOLPGM(".    ");
@@ -5470,47 +5525,51 @@ void home_all_axes() { gcode_G28(true); }
             #endif
               {
                 SERIAL_PROTOCOLPGM("std dev:");
-                SERIAL_PROTOCOL_F(zero_std_dev, 3);
+                SERIAL_PROTOCOL_F(zero_std_dev_min, 3);
               }
             SERIAL_EOL();
-            LCD_MESSAGEPGM("Calibration OK"); // TODO: Make translatable string
+            char mess[21];
+            sprintf_P(mess, PSTR("Calibration sd:"));
+            if (zero_std_dev_min < 1)
+              sprintf_P(&mess[15], PSTR("0.%03i"), (int)round(zero_std_dev_min * 1000.0));
+            else
+              sprintf_P(&mess[15], PSTR("%03i.x"), (int)round(zero_std_dev_min));
+            lcd_setstatus(mess);
+            print_G33_settings(!_1p_calibration, _7p_calibration && towers_set);
+            serialprintPGM(save_message);
+            SERIAL_EOL();
           }
           else {                                                     // !end iterations
-            char mess[15] = "No convergence";
+            char mess[15];
             if (iterations < 31)
               sprintf_P(mess, PSTR("Iteration : %02i"), (int)iterations);
+            else
+              sprintf_P(mess, PSTR("No convergence"));
             SERIAL_PROTOCOL(mess);
             SERIAL_PROTOCOL_SP(36);
             SERIAL_PROTOCOLPGM("std dev:");
             SERIAL_PROTOCOL_F(zero_std_dev, 3);
             SERIAL_EOL();
             lcd_setstatus(mess);
+            print_G33_settings(!_1p_calibration, _7p_calibration && towers_set);
           }
-          SERIAL_PROTOCOLPAIR(".Height:", DELTA_HEIGHT + home_offset[Z_AXIS]);
-          if (!_1p_calibration) {
-            print_signed_float(PSTR("  Ex"), endstop_adj[A_AXIS]);
-            print_signed_float(PSTR("Ey"), endstop_adj[B_AXIS]);
-            print_signed_float(PSTR("Ez"), endstop_adj[C_AXIS]);
-            SERIAL_PROTOCOLPAIR("    Radius:", delta_radius);
-          }
-          SERIAL_EOL();
-          if (_7p_calibration && towers_set) {
-            SERIAL_PROTOCOLPGM(".Tower angle :  ");
-            print_signed_float(PSTR("Tx"), delta_tower_angle_trim[A_AXIS]);
-            print_signed_float(PSTR("Ty"), delta_tower_angle_trim[B_AXIS]);
-            SERIAL_PROTOCOLPGM("  Tz:+0.00");
-            SERIAL_EOL();
-          }
-          if ((zero_std_dev >= test_precision || zero_std_dev <= calibration_precision) && iterations > force_iterations)
-            serialprintPGM(save_message);
-            SERIAL_EOL();
         }
         else {                                                       // dry run
-          SERIAL_PROTOCOLPGM("End DRY-RUN");
+          const char *enddryrun = PSTR("End DRY-RUN");
+          serialprintPGM(enddryrun);
           SERIAL_PROTOCOL_SP(39);
           SERIAL_PROTOCOLPGM("std dev:");
           SERIAL_PROTOCOL_F(zero_std_dev, 3);
           SERIAL_EOL();
+
+          char mess[21];
+          sprintf_P(mess, enddryrun);
+          sprintf_P(&mess[11], PSTR(" sd:"));
+          if (zero_std_dev < 1)
+            sprintf_P(&mess[15], PSTR("0.%03i"), (int)round(zero_std_dev * 1000.0));
+          else
+            sprintf_P(&mess[15], PSTR("%03i.x"), (int)round(zero_std_dev));
+          lcd_setstatus(mess);
         }
 
         endstops.enable(true);
@@ -7348,7 +7407,14 @@ inline void gcode_M109() {
       // Gradually change LED strip from violet to red as nozzle heats up
       if (!wants_to_cool) {
         const uint8_t blue = map(constrain(temp, start_temp, target_temp), start_temp, target_temp, 255, 0);
-        if (blue != old_blue) set_led_color(255, 0, (old_blue = blue));
+        if (blue != old_blue) {
+          old_blue = blue;
+          set_led_color(255, 0, blue
+            #if ENABLED(NEOPIXEL_RGBW_LED)
+              , 0, true
+            #endif
+          );
+        }
       }
     #endif
 
@@ -7383,7 +7449,7 @@ inline void gcode_M109() {
   if (wait_for_heatup) {
     LCD_MESSAGEPGM(MSG_HEATING_COMPLETE);
     #if ENABLED(PRINTER_EVENT_LEDS)
-      #if ENABLED(RGBW_LED)
+      #if ENABLED(RGBW_LED) || ENABLED(NEOPIXEL_RGBW_LED)
         set_led_color(0, 0, 0, 255);  // Turn on the WHITE LED
       #else
         set_led_color(255, 255, 255); // Set LEDs All On
@@ -7481,7 +7547,14 @@ inline void gcode_M109() {
         // Gradually change LED strip from blue to violet as bed heats up
         if (!wants_to_cool) {
           const uint8_t red = map(constrain(temp, start_temp, target_temp), start_temp, target_temp, 0, 255);
-          if (red != old_red) set_led_color((old_red = red), 0, 255);
+          if (red != old_red) {
+            old_red = red;
+            set_led_color(red, 0, 255
+              #if ENABLED(NEOPIXEL_RGBW_LED)
+                , 0, true
+              #endif
+            );
+          }
         }
       #endif
 
@@ -8139,7 +8212,7 @@ inline void gcode_M121() { endstops.enable_globally(false); }
       parser.seen('R') ? (parser.has_value() ? parser.value_byte() : 255) : 0,
       parser.seen('U') ? (parser.has_value() ? parser.value_byte() : 255) : 0,
       parser.seen('B') ? (parser.has_value() ? parser.value_byte() : 255) : 0
-      #if ENABLED(RGBW_LED)
+      #if ENABLED(RGBW_LED) || ENABLED(NEOPIXEL_RGBW_LED)
         , parser.seen('W') ? (parser.has_value() ? parser.value_byte() : 255) : 0
       #endif
     );
@@ -10334,21 +10407,19 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bool n
       UNUSED(fr_mm_s);
       UNUSED(no_move);
 
-      #if ENABLED(SWITCHING_EXTRUDER) && !DONT_SWITCH
-
-        stepper.synchronize();
-        move_extruder_servo(tmp_extruder);
-
-      #elif ENABLED(MK2_MULTIPLEXER)
-
+      #if ENABLED(MK2_MULTIPLEXER)
         if (tmp_extruder >= E_STEPPERS)
           return invalid_extruder_error(tmp_extruder);
 
         select_multiplexed_stepper(tmp_extruder);
-
       #endif
 
     #endif // HOTENDS <= 1
+
+    #if ENABLED(SWITCHING_EXTRUDER) && !DONT_SWITCH
+      stepper.synchronize();
+      move_extruder_servo(tmp_extruder);
+    #endif
 
     active_extruder = tmp_extruder;
 
@@ -10434,8 +10505,8 @@ void process_next_command() {
 
       // G2, G3
       #if ENABLED(ARC_SUPPORT) && DISABLED(SCARA)
-        case 2: // G2  - CW ARC
-        case 3: // G3  - CCW ARC
+        case 2: // G2: CW ARC
+        case 3: // G3: CCW ARC
           gcode_G2_G3(parser.codenum == 2);
           break;
       #endif
@@ -10446,16 +10517,17 @@ void process_next_command() {
         break;
 
       #if ENABLED(BEZIER_CURVE_SUPPORT)
-        // G5
-        case 5: // G5  - Cubic B_spline
+        case 5: // G5: Cubic B_spline
           gcode_G5();
           break;
       #endif // BEZIER_CURVE_SUPPORT
 
       #if ENABLED(FWRETRACT)
         case 10: // G10: retract
+          gcode_G10();
+          break;
         case 11: // G11: retract_recover
-          gcode_G10_G11(parser.codenum == 10);
+          gcode_G11();
           break;
       #endif // FWRETRACT
 
@@ -12495,7 +12567,7 @@ void prepare_move_to_destination() {
 
 #endif // FAST_PWM_FAN
 
-float calculate_volumetric_multiplier(float diameter) {
+float calculate_volumetric_multiplier(const float diameter) {
   if (!volumetric_enabled || diameter == 0) return 1.0;
   return 1.0 / (M_PI * sq(diameter * 0.5));
 }
@@ -13064,6 +13136,11 @@ void setup() {
 
   #if PIN_EXISTS(STAT_LED_BLUE)
     OUT_WRITE(STAT_LED_BLUE_PIN, LOW); // turn it off
+  #endif
+
+  #if ENABLED(NEOPIXEL_RGBW_LED)
+    SET_OUTPUT(NEOPIXEL_PIN);
+    setup_neopixel();
   #endif
 
   #if ENABLED(RGB_LED) || ENABLED(RGBW_LED)
