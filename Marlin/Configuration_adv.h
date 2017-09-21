@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Marlin 3D Printer Firmware
  * Copyright (C) 2016 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
@@ -101,7 +101,7 @@
 #if ENABLED(PIDTEMP)
   // this adds an experimental additional term to the heating power, proportional to the extrusion speed.
   // if Kc is chosen well, the additional required power due to increased melting should be compensated.
-  #define PID_EXTRUSION_SCALING
+  //#define PID_EXTRUSION_SCALING
   #if ENABLED(PID_EXTRUSION_SCALING)
     #define DEFAULT_Kc (100) //heating power=Kc*(e_speed)
     #define LPQ_MAX_LEN 50
@@ -348,7 +348,7 @@
 //homing hits the endstop, then retracts by this distance, before it tries to slowly bump again:
 #define X_HOME_BUMP_MM 2
 #define Y_HOME_BUMP_MM 2
-#define Z_HOME_BUMP_MM 2 // deltas need the same for all three axis
+#define Z_HOME_BUMP_MM 2 // deltas need the same for all three axes
 #define HOMING_BUMP_DIVISOR {2, 2, 4}  // Re-Bump Speed Divisor (Divides the Homing Feedrate)
 //#define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
 
@@ -464,6 +464,9 @@
 
 // On the Info Screen, display XY with one decimal place when possible
 //#define LCD_DECIMAL_SMALL_XY
+
+// The timeout (in ms) to return to the status screen from sub-menus
+//#define LCD_TIMEOUT_TO_STATUS 15000
 
 #if ENABLED(SDSUPPORT)
 
@@ -1286,8 +1289,8 @@
   #define USER_DESC_4 "Heat Bed/Home/Level"
   #define USER_GCODE_4 "M140 S" STRINGIFY(PREHEAT_2_TEMP_BED) "\nG28\nG29"
 
-  #define USER_DESC_5 "Home & Info"
-  #define USER_GCODE_5 "G28\nM503"
+  //#define USER_DESC_5 "Home & Info"
+  //#define USER_GCODE_5 "G28\nM503"
 #endif
 
 /**
@@ -1380,5 +1383,31 @@
   #define I2CPE_ERR_ROLLING_AVERAGE
 
 #endif // I2C_POSITION_ENCODERS
+
+/**
+  * Debug LED's using an 8x8 LED Matrix driven by a Max7219 chip.   Fully assembled versions are available on
+  * eBay for under $2.00 (including shipping) and only require 3 signal wires.
+  *
+  * Check out auctions similar to this: https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=332349290049&_sacat=0
+  */
+
+//#define MAX7219_DEBUG
+#if ENABLED(MAX7219_DEBUG)
+  #define Max7219_clock   64  // 77 on Re-ARM       // Configuration of the 3 pins to control the display
+  #define Max7219_data_in 57  // 78 on Re-ARM
+  #define Max7219_load    44  // 79 on Re-ARM
+
+  /*
+   * These are sample debug features that can be turned on and configured for your use.
+   * The developer will need to manage the use of the various LED's in the 8x8 matrix to avoid conflicts.
+   */
+  #define MAX7219_DEBUG_PRINTER_ALIVE    // Blink corner LED of 8x8 matrix from idle() routine if firmware is functioning
+  #define MAX7219_DEBUG_STEPPER_HEAD  3  // Display row position of stepper queue head on this line and the next line of LED matrix
+  #define MAX7219_DEBUG_STEPPER_TAIL  5  // Display row position of stepper queue tail on this line and the next line of LED matrix
+
+  #define MAX7219_DEBUG_STEPPER_QUEUE 0  // Display row position of stepper queue depth on this line and the next line of LED matrix
+                                         // If you have stuttering on your Delta printer, this option may help you understand how
+                                         // various tweaks you make to your configuration are affecting the printer.
+#endif
 
 #endif // CONFIGURATION_ADV_H
